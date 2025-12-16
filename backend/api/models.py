@@ -20,8 +20,6 @@ class CustomUser(AbstractUser):
         return f"{self.username} ({self.role})"
     
 
-
-
 class Event(models.Model):
     title = models.CharField(max_length=255)
     descrition = models.TextField(blank=True)
