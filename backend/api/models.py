@@ -12,13 +12,15 @@ class CustomUser(AbstractUser):
         ('workshop_leader', 'Workshop Leader'),
     ]
 
-    role = models.Charfield(max_Length=30, choises=ROLE_CHOICES, default='participant')
+    role = models.CharField(max_Length=30, choises=ROLE_CHOICES, default='participant')
     institution = models.CharField(max_length=255, blank=True)
     biography = models.TextField(blank=True)
 
     def __str__(self):
         return f"{self.username} ({self.role})"
     
+
+
 
 class Event(models.Model):
     title = models.CharField(max_length=255)
@@ -67,3 +69,4 @@ class ParticipantRegistration(models.Model):
     user = models.ForeignKey(CustomUser, ralated_name='registrations', on_delete=models.CASCADE)
     event = models.ForeignKey(Event, related_name='registrations', on_delete=models.CASCADE)
     role = models.CharField(max_length=50, choices=[('participant','Participant'),('author','Author'),('guest','Guest')], default='participant')
+    payment_status = models.CharField() 
