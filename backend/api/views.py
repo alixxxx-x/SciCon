@@ -4,7 +4,8 @@ from .serializers import *
 from rest_framework.permissions import AllowAny, IsAdminUser, IsAuthenticated, IsAuthenticatedOrReadOnly
 
 class UserCreateView(generics.CreateAPIView):
-    serializer_class = CustomUserSerializer
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
     permission_classes = [AllowAny]
     
 
