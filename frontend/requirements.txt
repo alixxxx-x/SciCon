@@ -1,0 +1,3 @@
+axios
+react-router-dom
+jwt-decode

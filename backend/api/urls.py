@@ -8,4 +8,5 @@ urlpatterns = [
     path('user/register/', UserCreateView.as_view(), name='register'),
     path('api-auth/', include('rest_framework.urls')),
     path('events/', EventListCreate.as_view(), name='event_list_create'),
+    path('events/delete/<int:pk>/', EventDelete.as_view(), name='event_delete'),
 ]
