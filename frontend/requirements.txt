@@ -1,3 +1,6 @@
 axios
 react-router-dom
 jwt-decode
+tailwindcss
+postcss
+autoprefixer
