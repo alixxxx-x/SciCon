@@ -1,12 +1,13 @@
 import { useState } from "react";
 import api from "../api";
-import { Form, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { ACCESS_TOKEN, REFRESH_TOKEN } from "../constants";
+import "../styles/Form.css";
 
-function From ({ route, method}) {
+function Form ({route, method}) {
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
-    const [loading , setLoading] = useState();
+    const [loading , setLoading] = useState(false);
     const navigate = useNavigate();
 
     const name = method === "login" ? "Login" : "Register";
@@ -16,10 +17,15 @@ function From ({ route, method}) {
         e.preventDefault();
 
         try {
-            const response = await api.post(route, { username, passord});
+            const response = await api.post(route, { username, password});
 
             if (method === "login") {
-                localStorage.setItem(ACESS_TOKEN, response.data.access);
+                localStorage.setItem(ACCESS_TOKEN, response.data.access);
+                localStorage.setItem(REFRESH_TOKEN, response.data.refresh);
+                navigate("/");
+            }else {
+                alert("Registration successful! Please log in.");
+                navigate("/login"); 
             }
         }
         catch (error){
@@ -51,7 +57,7 @@ function From ({ route, method}) {
             />
 
             <button className="form-button" type="submit" >
-                
+                {name}
             </button>
 
         </form>
