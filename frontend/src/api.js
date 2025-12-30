@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { ACESS_TOKEN, REFRESH_TOKEN } from './constants';
+import { ACCESS_TOKEN, REFRESH_TOKEN } from './constants';
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL,
@@ -7,7 +7,7 @@ const api = axios.create({
 
 api.interceptors.request.use(
     (config) => {
-        const token = localStorage.getItem(ACESS_TOKEN);
+        const token = localStorage.getItem(ACCESS_TOKEN);
         if(token) {
             config.headers.Authorization = `Bearer ${token}`;
         }
