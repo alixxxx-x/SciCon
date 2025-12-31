@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
+# User model
+
 class User(AbstractUser):
     ROLE_CHOICES = [
         ('superadmin', 'Super Administrator'),
@@ -19,8 +21,7 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.username} ({self.role})"
     
-
-
+# Event model
 
 class Event(models.Model):
     title = models.CharField(max_length=255)
@@ -36,6 +37,8 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+    
+# Session model
 
 class Session(models.Model):
     event = models.ForeignKey(Event, related_name='sessions', on_delete=models.CASCADE)
@@ -48,6 +51,8 @@ class Session(models.Model):
     def __str__(self):
         return f"{self.title} ({self.event.title})"
     
+# Workshop model
+    
 class Workshop(models.Model):
     event = models.ForeignKey(Event, related_name='workshops', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
@@ -58,6 +63,8 @@ class Workshop(models.Model):
 
     def __str__(self):
         return f"{self.title} ({self.event.title})"    
+
+# participant registration class
 
 class ParticipantRegistration(models.Model):
     PAYMENT_CHOICES = [

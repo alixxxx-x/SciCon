@@ -1,6 +1,8 @@
 from rest_framework import serializers
 from .models import *
 
+# User Serializer
+
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
@@ -18,8 +20,13 @@ class UserSerializer(serializers.ModelSerializer):
         print("Creating user with data:", validated_data)
         user = User.objects.create_user(**validated_data)
         return user
+    
+    
+# Event Serializer
 
 class EventSerializer(serializers.ModelSerializer):
+    organizer = serializers.StringRelatedField(read_only=True)
+
     class Meta:
         model=Event
         fields={
@@ -34,10 +41,5 @@ class EventSerializer(serializers.ModelSerializer):
             'archived',
             'created_at',
             'updated_at',
-            'updated_at',
         }
-        extra_kwargs = {
-            'created_at': {'read_only': True},
-            'updated_at': {'read_only': True},
-            'author': {'read_only': True},
-        }
+        read_only_fields = ('created_at', 'updated_at', 'archived', 'organizer')
