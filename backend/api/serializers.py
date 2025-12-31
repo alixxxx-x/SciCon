@@ -29,7 +29,7 @@ class EventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model=Event
-        fields={
+        fields = [   # <-- use a list, not a set
             'id',
             'title',
             'description',
@@ -41,5 +41,6 @@ class EventSerializer(serializers.ModelSerializer):
             'archived',
             'created_at',
             'updated_at',
-        }
+        ]
+        
         read_only_fields = ('created_at', 'updated_at', 'archived', 'organizer')

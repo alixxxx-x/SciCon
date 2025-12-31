@@ -25,7 +25,7 @@ class User(AbstractUser):
 
 class Event(models.Model):
     title = models.CharField(max_length=255)
-    descrition = models.TextField(blank=True)
+    description = models.TextField(blank=True)
     venue = models.CharField(max_length=255,blank=True)
     start_date = models.DateField()
     end_date = models.DateField()

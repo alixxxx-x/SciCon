@@ -20,13 +20,9 @@ class UserDeleteView(generics.DestroyAPIView):
 
 class EventListCreateView(generics.ListCreateAPIView):
     queryset= Event.objects.all()
-    serialiser_class= EventSerializer
-
-    def get_permissions(self):    #if the http is post then only organiser can create event
-        if self.request.method == 'POST':
-            return [IsOrganiser()]  
-        if self.request.method == 'GET':  #if the http is GET then anyone can view all events
-            return []
+    serializer_class= EventSerializer
+    permission_classes = [AllowAny]
+    
 
     def perform_create(self, serializer):  # put the current user as organiser
         serializer.save(organizer=self.request.user)
@@ -38,7 +34,7 @@ class EventDetails(generics.RetrieveUpdateDestroyAPIView):
 
     def get_permissions(self):
         if self.request.method == 'GET': #anyone can view event details
-            return []
+            return [AllowAny()]
         if self.request.method in ['PUT', 'PATCH', 'DELETE']: #only organiser can update or delete event
             return [IsOrganiser()]
         
