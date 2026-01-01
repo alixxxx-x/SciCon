@@ -1,0 +1,81 @@
+.register-container {
+  width: 100%;
+  height: 100vh;
+  background: transparent;      
+  display: flex;
+  justify-content: center;
+  align-items: center;
+ 
+}
+
+.register-box {
+ width: 500px;
+height: 450px;
+background: transparent;
+border-radius: 40px;
+padding: 30px 40px;
+border: 4px solid rgba(255, 255, 255, .50);
+backdrop-filter: blur(30px);
+
+}
+
+.register-box h2 {
+  color: white;
+  margin-bottom: 20px;
+}
+
+.name-row {
+  display: flex;
+  gap: 10px;
+}
+
+.register-box input {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  border-radius: 6px;
+  border: none;
+  background: #2a2a2a;
+  color: white;
+  font-size: 14px;
+}
+
+.register-box button {
+  width: 200px;
+  padding: 12px;
+  margin-top: 18px;
+  background: linear-gradient(to right, #4e74ff, #6bc1ff);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+.register-box button:hover {
+  opacity: 0.9;
+}
+
+.login-link {
+  margin-top: 15px;
+  color: #ccc;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.login-link a {
+  color: #6bc1ff;
+  text-decoration: none;
+}
+
+.register-container .login-link{
+
+    font-size: 15px;
+    font-weight: 600;
+    
+}
+
+.login-link p a:hover{
+    color: cadetblue;
+    text-decoration: underline;
+}

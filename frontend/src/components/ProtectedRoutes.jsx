@@ -7,6 +7,7 @@ import { useState , useEffect } from "react";
 function ProtectedRoutes({ children}) {
     const [isAuthorized, setIsAuthorized] = useState(null);
 
+    // eslint-disable-next-line react-hooks/immutability
     useEffect(() => { checkAuth().catch(() => setIsAuthorized(false)) }, [])
 
     const refreshToken = async () => {
