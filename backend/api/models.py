@@ -24,7 +24,7 @@ class User(AbstractUser):
     biography = models.TextField(blank=True)
     photo = models.ImageField(upload_to='user_photos/', blank=True, null=True)
     country = models.CharField(max_length=100, blank=True)
-    phone = models.CharField(max_length=20,blank=True)
+    phone = models.CharField(max_length=20, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -59,7 +59,7 @@ class Event(models.Model):
     organizer = models.ForeignKey(User, related_name='organized_events', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
     description = models.TextField()
-    event_type = models.CharField(max_length=50, choices=EVENT_TYPE_CHOICES)
+    event_type = models.CharField(max_length=50, choices=EVENT_TYPE_CHOICES, default='congress')
     theme = models.CharField(max_length=255, blank=True)
     status = models.CharField(max_length=50, choices=STATUS_CHOICES, default='draft')
 
@@ -71,12 +71,12 @@ class Event(models.Model):
 
     # location
     venue = models.CharField(max_length=255)
-    city = models.CharField(max_length=100)
+    city = models.CharField(max_length=100, null=True, blank=True)
     country = models.CharField(max_length=100)
     address = models.CharField(max_length=255, blank=True)
 
     # Contact
-    contact_email = models.EmailField()
+    contact_email = models.EmailField(null=True, blank=True)
     contact_phone = models.CharField(max_length=20, blank=True)
     website = models.URLField(blank=True)
     
@@ -125,7 +125,6 @@ class Session(models.Model):
     end_time = models.DateTimeField()
     created_at = models.DateTimeField(auto_now_add=True)
 
-
     class Meta:
         ordering = ['date', 'start_time']
     
@@ -139,7 +138,7 @@ class Workshop(models.Model):
     # Workshop details
     event = models.ForeignKey(Event, related_name='workshops', on_delete=models.CASCADE)
     title = models.CharField(max_length=255)
-    leader = models.ForeignKey(User, related_name='leader_workshops', on_delete=models.SET_NULL)
+    leader = models.ForeignKey(User, related_name='leader_workshops', on_delete=models.SET_NULL, null=True)
     description = models.TextField(blank=True)
     
 
@@ -150,7 +149,7 @@ class Workshop(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     # room and capacity
-    participants = models.ManyToManyFiled(User, realted_name='attended_workshops', blank=True)
+    participants = models.ManyToManyField(User, related_name='attended_workshops', blank=True)
     max_participants = models.PositiveIntegerField(null=True, blank=True)
     room = models.CharField(max_length=128)
 
@@ -160,7 +159,6 @@ class Workshop(models.Model):
 
     def __str__(self):
         return f"{self.title} - {self.event.title} - {self.date}" 
-
 
 
 # participant registration class
@@ -186,13 +184,12 @@ class Registration(models.Model):
     event = models.ForeignKey(Event, related_name='registrations', on_delete=models.CASCADE)
 
     # registration details
-    registration_type = models.CharField(max_Length=20, choices=REGISTRATION_TYPE_CHOICES)
+    registration_type = models.CharField(max_length=20, choices=REGISTRATION_TYPE_CHOICES)
     registered_at = models.DateTimeField(auto_now_add=True)
 
     # payment details
     payment_status = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='pending')
     special_requirements = models.TextField(blank=True)
-
 
     class Meta:
         unique_together = ['event', 'user']
@@ -226,7 +223,6 @@ class Submission(models.Model):
     session = models.ForeignKey(Session, on_delete=models.SET_NULL, null=True, related_name='submissions')
     assigned_reviewers = models.ManyToManyField(User, related_name='assigned_submissions', blank=True)
 
-
     #submission detals
     title = models.CharField(max_length=299)
     keywords = models.TextField(help_text='seprate the keywords by commas !@#?')
@@ -258,7 +254,7 @@ class Review(models.Model):
     ]
 
     #related models
-    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, realted_name='reviews')
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, related_name='reviews')
     reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
 
     #score de 1 a 5
@@ -273,4 +269,5 @@ class Review(models.Model):
         unique_together = ['submission', 'reviewer']
 
     def __str__(self):
-        return f"Review by {self.reviewer.email} for {self.submission.title}"   
+        return f"Review by {self.reviewer.email} for {self.submission.title}"
+
