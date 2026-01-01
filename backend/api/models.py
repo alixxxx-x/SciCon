@@ -199,3 +199,78 @@ class Registration(models.Model):
     
     def __str__(self):
         return f"{self.user.email} - {self.event.title}"
+    
+
+
+# Submission model
+
+class Submission(models.Model):
+    
+    COMMUNICATION_TYPE_CHOICES = [
+        ('oral','Oral Presentation'),
+        ('poster','Poster Presentation'),
+        ('video','Video Presentation'),
+    ]
+
+    STATUS_CHOICES =[
+        ('pending','Pending'),
+        ('under_review','Being Reviewed'),
+        ('accepted','Accepted'),
+        ('rejected','Rejected'),
+    ]
+
+    #related models
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='submissions')
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='submissions')
+    co_authors = models.TextField(help_text='seperate them by commas !!!')
+    session = models.ForeignKey(Session, on_delete=models.SET_NULL, null=True, related_name='submissions')
+    assigned_reviewers = models.ManyToManyField(User, related_name='assigned_submissions', blank=True)
+
+
+    #submission detals
+    title = models.CharField(max_length=299)
+    keywords = models.TextField(help_text='seprate the keywords by commas !@#?')
+    submission_type = models.CharField(max_length=200, choices=COMMUNICATION_TYPE_CHOICES)
+    status = models.CharField(max_length=20,choices=STATUS_CHOICES, default='pending')
+
+    #resume
+    resume_file = models.FileField(upload_to='submissions_resumes/')
+
+    #timestamps
+    submitted_at= models.DateTimeField(auto_now_add=True)
+    updated_at= models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-submitted_at']
+
+    def __str__(self):
+        return f"{self.title} - {self.author.email}"
+    
+
+
+# reviw model (reviews of submissions by scientific commitee members)
+class Review(models.Model):
+
+    DECISION_CHOICES = [
+        ('accept','Accepte'),
+        ('reject','Rejected'),
+        ('revision','Revision Required')
+    ]
+
+    #related models
+    submission = models.ForeignKey(Submission, on_delete=models.CASCADE, realted_name='reviews')
+    reviewer = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+
+    #score de 1 a 5
+    score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(5)]) 
+
+    comments = models.TextField()
+    decision = models.CharField(max_length=20, choices=DECISION_CHOICES)
+
+    reviewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ['submission', 'reviewer']
+
+    def __str__(self):
+        return f"Review by {self.reviewer.email} for {self.submission.title}"   
