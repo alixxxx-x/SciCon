@@ -29,7 +29,7 @@ class EventSerializer(serializers.ModelSerializer):
 
     class Meta:
         model=Event
-        fields={
+        fields = [  
             'id',
             'title',
             'description',
@@ -39,7 +39,7 @@ class EventSerializer(serializers.ModelSerializer):
             'organizer',
             'committee',
             'archived',
-            'created_at',
-            'updated_at',
-        }
-        read_only_fields = ('created_at', 'updated_at', 'archived', 'organizer')
+
+        ]
+        
+        read_only_fields = ('archived', 'organizer')
