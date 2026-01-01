@@ -6,36 +6,42 @@ from .permissions import *
 
 # User Views 
 
-class UserCreateView(generics.CreateAPIView):
+class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     permission_classes = [AllowAny]
 
-class UserDeleteView(generics.DestroyAPIView):
+class UserProfileView(generics.RetrieveUpdateAPIView):
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_object(self):
+        return self.request.user
+
+
+class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [IsSuperAdmin]
+    search_fields = ['username', 'email', 'institution']
+    ordering_fields = ['created_at', 'username']
+
 
 # Event Views
 
 class EventListCreateView(generics.ListCreateAPIView):
     queryset= Event.objects.all()
     serializer_class= EventSerializer
-    permission_classes = [AllowAny]
+    permission_classes = [EventPermissions]  
     
-
     def perform_create(self, serializer):  # put the current user as organiser
         serializer.save(organizer=self.request.user)
 
 
-class EventDetails(generics.RetrieveUpdateDestroyAPIView):
+class EventDetailsView(generics.RetrieveUpdateDestroyAPIView):
     queryset= Event.objects.all()
     serializer_class= EventSerializer
-
-    def get_permissions(self):
-        if self.request.method == 'GET': #anyone can view event details
-            return [AllowAny()]
-        if self.request.method in ['PUT', 'PATCH', 'DELETE']: #only organiser can update or delete event
-            return [IsOrganiser()]
+    permission_classes = [EventPermissions]  
+        
         
 # Committee Views
