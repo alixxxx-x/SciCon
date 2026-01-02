@@ -754,3 +754,28 @@
 .newsletter-button:hover {
   background-color: #2563eb;
 }
+/* Connection Status */
+.connection-status {
+  padding: 12px 20px;
+  text-align: center;
+  font-weight: 500;
+  border-bottom: 1px solid #ddd;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.connection-status.loading {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.connection-status.success {
+  background-color: #e8f5e9;
+  color: #2e7d32;
+}
+
+.connection-status.error {
+  background-color: #ffebee;
+  color: #c62828;
+}
