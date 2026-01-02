@@ -23,7 +23,7 @@ export default function AboutPage() {
                 <div className="section-content">
                     <h2>The Team</h2>
                     <div className="team-grid">
-                        <div className="team-member">  {/* Fixed: className (was classeName) */}
+                        <div className="team-member">  
                             <div className="member-photo">MD</div>
                             <h3>Dr. Sara Ben Ahmed</h3>
                             <p>Medical Director</p>
