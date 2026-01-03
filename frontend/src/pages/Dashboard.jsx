@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     BarChart3,
     Users,
@@ -13,23 +13,37 @@ import {
     Plus
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import api from "../api";
+
+const iconMap = {
+    Calendar: Calendar,
+    Users: Users,
+    FileText: FileText,
+    BarChart3: BarChart3
+};
 
 const Dashboard = () => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [stats, setStats] = useState([]);
+    const [recentEvents, setRecentEvents] = useState([]);
 
-    // Mock data for the dashboard overview
-    const stats = [
-        { title: 'Total Events', value: '12', icon: Calendar, color: 'bg-blue-500', trend: '+2 this month' },
-        { title: 'Participants', value: '1,234', icon: Users, color: 'bg-green-500', trend: '+15% vs last month' },
-        { title: 'Submissions', value: '86', icon: FileText, color: 'bg-purple-500', trend: '12 pending review' },
-        { title: 'Revenue', value: '$12,450', icon: BarChart3, color: 'bg-yellow-500', trend: '+8% growth' },
-    ];
+    useEffect(() => {
+        getDashboardData();
+    }, []);
 
-    const recentEvents = [
-        { id: 1, title: 'Intl. Conference on AI in Healthcare', date: '2026-03-15', status: 'Upcoming', participants: 150 },
-        { id: 2, title: 'Web Development Workshop 2026', date: '2026-02-10', status: 'Open for CFP', participants: 45 },
-        { id: 3, title: 'Annual Medical Research Symposium', date: '2026-01-20', status: 'Completed', participants: 320 },
-    ];
+    const getDashboardData = () => {
+        api.get("/api/dashboard/stats/")
+            .then((res) => {
+                // Transform the icon string from backend to actual component
+                const formattedStats = res.data.stats.map(stat => ({
+                    ...stat,
+                    icon: iconMap[stat.icon] || Calendar
+                }));
+                setStats(formattedStats);
+                setRecentEvents(res.data.recent_events);
+            })
+            .catch((err) => console.error("Error fetching dashboard data:", err));
+    };
 
     return (
         <div className="flex h-screen bg-[#0a0a0a] text-white font-sans overflow-hidden">
