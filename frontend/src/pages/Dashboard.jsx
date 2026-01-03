@@ -192,7 +192,7 @@ const SidebarItem = ({ icon: Icon, label, active, open }) => (
         {open && <span className="ml-3 font-medium">{label}</span>}
     </button>
 );
-
+//ك
 const StatCard = ({ title, value, icon: Icon, color, trend }) => (
     <div className="bg-[#1a1a2e] border border-gray-800 p-5 rounded-2xl hover:border-gray-700 transition-colors">
         <div className="flex items-start justify-between">
