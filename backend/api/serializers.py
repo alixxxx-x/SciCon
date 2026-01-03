@@ -36,7 +36,7 @@ class EventSerializer(serializers.ModelSerializer):
             'start_date',
             'end_date',
             'organizer',
-            'committee',
+            'scientific_committee'
             'archived',
 
         ]

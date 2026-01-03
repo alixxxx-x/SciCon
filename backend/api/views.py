@@ -32,7 +32,7 @@ class UserListView(generics.ListAPIView):
 class EventListCreateView(generics.ListCreateAPIView):
     queryset= Event.objects.all()
     serializer_class= EventSerializer
-    permission_classes = [EventPermissions]  
+    permission_classes = [AllowAny]  
     
     def perform_create(self, serializer):  # put the current user as organiser
         serializer.save(organizer=self.request.user)
