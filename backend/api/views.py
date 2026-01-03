@@ -1,12 +1,22 @@
+# ============================================
+# api/views.py
+# ============================================
+
 from rest_framework import generics, status, filters
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.db.models import Q, Count, Avg
+from django.utils import timezone
+from django.http import FileResponse
 from .models import *
 from .serializers import *
 from .permissions import *
+
+# ============================================
+# Authentication Views
+# ============================================
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -189,7 +199,7 @@ class ReviewListCreateView(generics.ListCreateAPIView):
         reviews_count = submission.reviews.count()
         if reviews_count >= 2:
             avg_score = submission.reviews.aggregate(
-                avg=Avg('relevance_score') + Avg('quality_score') + Avg('originality_score')
+                avg=(Avg('relevance_score') + Avg('quality_score') + Avg('originality_score'))
             )['avg'] / 3
             
             if avg_score >= 4:
@@ -402,7 +412,7 @@ def survey_results(request, survey_id):
 
 
 # ============================================
-# Certificate Views
+# Certificate Views (FIXED - NO utils.py dependency)
 # ============================================
 
 class CertificateListView(generics.ListAPIView):
@@ -413,39 +423,94 @@ class CertificateListView(generics.ListAPIView):
         return Certificate.objects.filter(user=self.request.user)
 
 
+class CertificateDetailView(generics.RetrieveAPIView):
+    serializer_class = CertificateSerializer
+    permission_classes = [IsAuthenticated]
+    
+    def get_queryset(self):
+        return Certificate.objects.filter(user=self.request.user)
+
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsOrganizer])
 def generate_certificates(request, event_id):
+    """
+    Generate certificate records for all participants
+    Note: This creates database records only. Actual PDF files can be uploaded via admin panel.
+    """
     try:
         event = Event.objects.get(id=event_id)
+        generated_count = 0
         
+        # Generate for all registrations
         for registration in event.registrations.all():
             cert_type = 'participation'
             if registration.registration_type == 'speaker':
                 cert_type = 'presentation'
             
-            Certificate.objects.get_or_create(
+            certificate, created = Certificate.objects.get_or_create(
                 event=event,
                 user=registration.user,
                 certificate_type=cert_type
             )
+            if created:
+                generated_count += 1
         
+        # Generate for scientific committee members
         for member in event.scientific_committee.all():
-            Certificate.objects.get_or_create(
+            certificate, created = Certificate.objects.get_or_create(
                 event=event,
                 user=member,
                 certificate_type='committee'
             )
+            if created:
+                generated_count += 1
         
-        Certificate.objects.get_or_create(
+        # Generate for organizer
+        certificate, created = Certificate.objects.get_or_create(
             event=event,
             user=event.organizer,
             certificate_type='organization'
         )
+        if created:
+            generated_count += 1
         
-        return Response({'message': 'Certificates generated successfully'}, status=status.HTTP_200_OK)
+        return Response({
+            'message': f'{generated_count} new certificates created successfully',
+            'total_certificates': event.certificates.count(),
+            'note': 'Certificate PDFs can be uploaded through the admin panel'
+        }, status=status.HTTP_200_OK)
     except Event.DoesNotExist:
         return Response({'error': 'Event not found'}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def download_certificate(request, certificate_id):
+    """
+    Download certificate PDF if it exists
+    """
+    try:
+        certificate = Certificate.objects.get(id=certificate_id, user=request.user)
+        
+        if certificate.certificate_file:
+            return FileResponse(
+                certificate.certificate_file.open('rb'),
+                as_attachment=True,
+                filename=f'certificate_{certificate.user.username}_{certificate.event.title}.pdf'
+            )
+        else:
+            return Response({
+                'error': 'Certificate PDF not available yet. Please contact the event organizer.',
+                'certificate_info': {
+                    'event': certificate.event.title,
+                    'type': certificate.get_certificate_type_display(),
+                    'generated_at': certificate.generated_at
+                }
+            }, status=status.HTTP_404_NOT_FOUND)
+        
+    except Certificate.DoesNotExist:
+        return Response({'error': 'Certificate not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 # ============================================
