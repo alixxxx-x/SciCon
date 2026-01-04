@@ -1,7 +1,3 @@
-# ============================================
-# api/views.py
-# ============================================
-
 from rest_framework import generics, status, filters
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied
@@ -15,9 +11,8 @@ from .models import *
 from .serializers import *
 from .permissions import *
 
-# ============================================
+
 # Authentication Views
-# ============================================
 
 class RegisterView(generics.CreateAPIView):
     queryset = User.objects.all()
@@ -42,9 +37,8 @@ class UserListView(generics.ListAPIView):
     ordering_fields = ['created_at', 'username']
 
 
-# ============================================
+
 # Event Views
-# ============================================
 
 class EventListCreateView(generics.ListCreateAPIView):
     queryset = Event.objects.all()
@@ -85,9 +79,8 @@ class MyEventsView(generics.ListAPIView):
         return Event.objects.filter(organizer=self.request.user)
 
 
-# ============================================
+
 # Session Views
-# ============================================
 
 class SessionListCreateView(generics.ListCreateAPIView):
     serializer_class = SessionSerializer
@@ -108,9 +101,9 @@ class SessionDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsEventOrganizer]
 
 
-# ============================================
+
+
 # Submission Views
-# ============================================
 
 class SubmissionListCreateView(generics.ListCreateAPIView):
     serializer_class = SubmissionSerializer
@@ -227,9 +220,9 @@ def assign_reviewers(request, submission_id):
         return Response({'error': 'Submission not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-# ============================================
+
+
 # Review Views
-# ============================================
 
 class ReviewListCreateView(generics.ListCreateAPIView):
     serializer_class = ReviewSerializer
@@ -279,9 +272,8 @@ class ReviewDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated, IsReviewerOrOrganizer]
 
 
-# ============================================
+
 # Registration Views
-# ============================================
 
 class RegistrationListCreateView(generics.ListCreateAPIView):
     serializer_class = RegistrationSerializer
@@ -312,9 +304,9 @@ class MyRegistrationsView(generics.ListAPIView):
         return Registration.objects.filter(user=self.request.user)
 
 
-# ============================================
+
+
 # Workshop Views
-# ============================================
 
 class WorkshopListCreateView(generics.ListCreateAPIView):
     serializer_class = WorkshopSerializer
@@ -350,9 +342,10 @@ def register_workshop(request, workshop_id):
         return Response({'error': 'Workshop not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-# ============================================
+
+
 # Question Views
-# ============================================
+
 
 class QuestionListCreateView(generics.ListCreateAPIView):
     serializer_class = QuestionSerializer
@@ -392,9 +385,9 @@ def answer_question(request, question_id):
         return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-# ============================================
+
+
 # Survey Views
-# ============================================
 
 class SurveyListCreateView(generics.ListCreateAPIView):
     serializer_class = SurveySerializer
@@ -465,9 +458,9 @@ def survey_results(request, survey_id):
         return Response({'error': 'Survey not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-# ============================================
+
 # Certificate Views (FIXED - NO utils.py dependency)
-# ============================================
+
 
 class CertificateListView(generics.ListAPIView):
     serializer_class = CertificateSerializer
@@ -567,10 +560,8 @@ def download_certificate(request, certificate_id):
         return Response({'error': 'Certificate not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
-# ============================================
-# Message Views
-# ============================================
 
+# Message Views
 class MessageListCreateView(generics.ListCreateAPIView):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated]
@@ -606,9 +597,8 @@ class MessageDetailView(generics.RetrieveDestroyAPIView):
         return Response(serializer.data)
 
 
-# ============================================
+
 # Notification Views
-# ============================================
 
 class NotificationListView(generics.ListAPIView):
     serializer_class = NotificationSerializer
@@ -637,9 +627,8 @@ def mark_all_notifications_read(request):
     return Response({'message': 'All notifications marked as read'}, status=status.HTTP_200_OK)
 
 
-# ============================================
+
 # Statistics & Dashboard Views
-# ============================================
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated, IsOrganizer])

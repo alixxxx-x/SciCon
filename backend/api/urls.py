@@ -6,52 +6,52 @@ urlpatterns = [
 
  
     # Authentication
-    path('auth/register/', RegisterView.as_view(), name='register'),
-    path('auth/login/', TokenObtainPairView.as_view(), name='login'),
+    path('auth/register/', RegisterView.as_view(), name='register'), #[AllowAny]
+    path('auth/login/', TokenObtainPairView.as_view(), name='login'), 
     path('auth/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
-    path('auth/profile/', UserProfileView.as_view(), name='profile'),
-    path('users/', UserListView.as_view(), name='users'),
+    path('auth/profile/', UserProfileView.as_view(), name='profile'),#[IsAuthenticated]
+    path('users/', UserListView.as_view(), name='users'),#[IsSuperAdmin]
     
     # Dashboard
     path('dashboard/', dashboard, name='dashboard'),
     
     # Events
-    path('events/', EventListCreateView.as_view(), name='events'),
-    path('events/<int:pk>/', EventDetailView.as_view(), name='event_detail'),
-    path('events/my-events/', MyEventsView.as_view(), name='my_events'),
+    path('events/', EventListCreateView.as_view(), name='events'),#[IsAuthenticated]
+    path('events/<int:pk>/', EventDetailView.as_view(), name='event_detail'),#[IsAuthenticated, IsEventOrganizer]
+    path('events/my-events/', MyEventsView.as_view(), name='my_events'),#[IsAuthenticated]
     path('events/<int:event_id>/statistics/', event_statistics, name='event_stats'),
     
     # Sessions
-    path('events/<int:event_id>/sessions/', SessionListCreateView.as_view(), name='sessions'),
-    path('sessions/<int:pk>/', SessionDetailView.as_view(), name='session_detail'),
+    path('events/<int:event_id>/sessions/', SessionListCreateView.as_view(), name='sessions'),#[IsAuthenticated]
+    path('sessions/<int:pk>/', SessionDetailView.as_view(), name='session_detail'),#[IsAuthenticated, IsEventOrganizer]
     
     # Submissions
-    path('events/<int:event_id>/submissions/', SubmissionListCreateView.as_view(), name='submissions'),
-    path('submissions/<int:pk>/', SubmissionDetailView.as_view(), name='submission_detail'),
-    path('submissions/my-submissions/', MySubmissionsView.as_view(), name='my_submissions'),
+    path('events/<int:event_id>/submissions/', SubmissionListCreateView.as_view(), name='submissions'),#[IsAuthenticated]
+    path('submissions/<int:pk>/', SubmissionDetailView.as_view(), name='submission_detail'),#[IsAuthenticated]
+    path('submissions/my-submissions/', MySubmissionsView.as_view(), name='my_submissions'),#[IsAuthenticated]
     path('submissions/<int:submission_id>/assign-reviewers/', assign_reviewers, name='assign_reviewers'),
     
     # Reviews
-    path('submissions/<int:submission_id>/reviews/', ReviewListCreateView.as_view(), name='reviews'),
-    path('reviews/<int:pk>/', ReviewDetailView.as_view(), name='review_detail'),
+    path('submissions/<int:submission_id>/reviews/', ReviewListCreateView.as_view(), name='reviews'),#[IsAuthenticated, IsReviewerOrOrganizer]
+    path('reviews/<int:pk>/', ReviewDetailView.as_view(), name='review_detail'),#[IsAuthenticated, IsReviewerOrOrganizer]
     
     # Registrations
-    path('events/<int:event_id>/registrations/', RegistrationListCreateView.as_view(), name='registrations'),
-    path('registrations/<int:pk>/', RegistrationDetailView.as_view(), name='registration_detail'),
-    path('registrations/my-registrations/', MyRegistrationsView.as_view(), name='my_registrations'),
+    path('events/<int:event_id>/registrations/', RegistrationListCreateView.as_view(), name='registrations'),#[IsAuthenticated]
+    path('registrations/<int:pk>/', RegistrationDetailView.as_view(), name='registration_detail'),#[IsAuthenticated]
+    path('registrations/my-registrations/', MyRegistrationsView.as_view(), name='my_registrations'),#[IsAuthenticated]
     
     # Workshops
-    path('events/<int:event_id>/workshops/', WorkshopListCreateView.as_view(), name='workshops'),
-    path('workshops/<int:pk>/', WorkshopDetailView.as_view(), name='workshop_detail'),
-    path('workshops/<int:workshop_id>/register/', register_workshop, name='workshop_register'),
+    path('events/<int:event_id>/workshops/', WorkshopListCreateView.as_view(), name='workshops'),#[IsAuthenticated]
+    path('workshops/<int:pk>/', WorkshopDetailView.as_view(), name='workshop_detail'),#[IsAuthenticated]
+    path('workshops/<int:workshop_id>/register/', register_workshop, name='workshop_register'),#[IsAuthenticated]
     
     # Questions
-    path('sessions/<int:session_id>/questions/', QuestionListCreateView.as_view(), name='questions'),
+    path('sessions/<int:session_id>/questions/', QuestionListCreateView.as_view(), name='questions'),#[IsAuthenticated]
     path('questions/<int:question_id>/like/', like_question, name='question_like'),
     path('questions/<int:question_id>/answer/', answer_question, name='question_answer'),
     
     # Surveys
-    path('events/<int:event_id>/surveys/', SurveyListCreateView.as_view(), name='surveys'),
+    path('events/<int:event_id>/surveys/', SurveyListCreateView.as_view(), name='surveys'),#[IsAuthenticated]
     path('surveys/<int:pk>/', SurveyDetailView.as_view(), name='survey_detail'),
     path('surveys/responses/', SurveyResponseCreateView.as_view(), name='survey_response'),
     path('surveys/<int:survey_id>/results/', survey_results, name='survey_results'),
