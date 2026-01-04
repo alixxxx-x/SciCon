@@ -1,10 +1,9 @@
-# ============================================
-# api/views.py
-# ============================================
-
+```python
+from django.shortcuts import render
 from rest_framework import generics, status, filters
+from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser, IsAuthenticatedOrReadOnly
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.views import TokenObtainPairView
 from django.db.models import Q, Count, Avg
@@ -81,6 +80,60 @@ class MyEventsView(generics.ListAPIView):
     def get_queryset(self):
         return Event.objects.filter(organizer=self.request.user)
 
+
+class DashboardStatsView(APIView):
+    """
+    Custom Dashboard Stats View created by Nadjib.
+    Provides summary statistics for the admin dashboard.
+    """
+    permission_classes = [AllowAny] # TODO: Change to IsAuthenticated later
+
+    def get(self, request):
+        # Calculate stats
+        total_events = Event.objects.count()
+        total_participants = User.objects.exclude(role='admin').count() # Assuming simplified logic
+        total_submissions = Submission.objects.count()
+        revenue = total_events * 100 # Placeholder logic
+
+        stats = [
+            { 
+                "title": "Total Events", 
+                "value": str(total_events), 
+                "icon": "Calendar", 
+                "color": "bg-blue-500", 
+                "trend": "Live Data" 
+            },
+            { 
+                "title": "Participants", 
+                "value": str(total_participants), 
+                "icon": "Users", 
+                "color": "bg-purple-500", 
+                "trend": "Registered" 
+            },
+            { 
+                "title": "Submissions", 
+                "value": str(total_submissions), 
+                "icon": "FileText", 
+                "color": "bg-pink-500", 
+                "trend": "Pending Review" 
+            },
+            { 
+                "title": "Revenue", 
+                "value": f"${revenue}", 
+                "icon": "BarChart3", 
+                "color": "bg-orange-500", 
+                "trend": "Estimated" 
+            },
+        ]
+        
+        # Get recent events
+        recent_events = Event.objects.order_by('-start_date')[:5]
+        recent_events_data = EventSerializer(recent_events, many=True).data
+        
+        return Response({
+            "stats": stats,
+            "recent_events": recent_events_data
+        })
 
 # ============================================
 # Session Views
@@ -655,3 +708,4 @@ def dashboard(request):
         ).count()
     
     return Response(data, status=status.HTTP_200_OK)
+```

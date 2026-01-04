@@ -185,3 +185,6 @@ class NotificationSerializer(serializers.ModelSerializer):
         model = Notification
         fields = '__all__'
         read_only_fields = ['user', 'created_at']
+
+# Alias for compatibility with DashboardStatsView
+EventSerializer = EventListSerializer

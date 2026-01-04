@@ -13,6 +13,8 @@ urlpatterns = [
     path('users/', UserListView.as_view(), name='users'),
     
     # Dashboard
+    # Dashboard
+    path('dashboard/stats/', DashboardStatsView.as_view(), name='dashboard_stats'),
     path('dashboard/', dashboard, name='dashboard'),
     
     # Events
