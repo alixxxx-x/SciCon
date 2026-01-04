@@ -20,7 +20,6 @@ urlpatterns = [
     path('events/<int:pk>/', EventDetailView.as_view(), name='event_detail'),#[IsAuthenticated, IsEventOrganizer]
     path('events/my-events/', MyEventsView.as_view(), name='my_events'),#[IsAuthenticated]
     path('events/<int:event_id>/statistics/', event_statistics, name='event_stats'),
-    path('events/<int:pk>/status/', EventStatusUpdateView.as_view(), name='event_status'),
     
     # Sessions
     path('events/<int:event_id>/sessions/', SessionListCreateView.as_view(), name='sessions'),#[IsAuthenticated]

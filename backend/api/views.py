@@ -64,23 +64,29 @@ class EventListCreateView(generics.ListCreateAPIView):
             raise serializers.ValidationError("Only organizers can create events.")
         serializer.save(organizer=self.request.user)
 
-class EventStatusUpdateView(generics.UpdateAPIView):
+
+class EventRetrieveUpdateView(generics.RetrieveUpdateAPIView):
     queryset = Event.objects.all()
-    serializer_class = EventStatusSerializer
     permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+
+    def get_serializer_class(self):
+        if self.request.method == 'GET':
+            return EventDetailSerializer
+        return EventDetailSerializer  # same serializer for update
 
     def perform_update(self, serializer):
         user = self.request.user
-        event = self.get_object()
 
         if user.role not in ['organizer', 'super_admin']:
-            raise serializers.ValidationError("You are not allowed to update status.")
+            raise serializers.ValidationError("Only organizers can update events.")
 
-        # optional: only organizer of this event
-        if user.role == 'organizer' and event.organizer != user:
+        # Optional: ensure organizer owns the event
+        if user.role == 'organizer' and serializer.instance.organizer != user:
             raise serializers.ValidationError("You can only update your own events.")
 
         serializer.save()
+
 
 class EventDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Event.objects.all()
