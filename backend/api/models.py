@@ -380,6 +380,7 @@ class Notification(models.Model):
         ('program_updated', 'Program Updated'),
         ('new_message', 'New Message'),
         ('event_reminder', 'Event Reminder'),
+        
     ]
     
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')

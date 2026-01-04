@@ -4,6 +4,7 @@
 
 from rest_framework import generics, status, filters
 from rest_framework.response import Response
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -65,6 +66,8 @@ class EventListCreateView(generics.ListCreateAPIView):
         return queryset
     
     def perform_create(self, serializer):
+        if self.request.user.role not in ['organizer', 'super_admin']:
+            raise serializers.ValidationError("Only organizers can create events.")
         serializer.save(organizer=self.request.user)
 
 
@@ -131,13 +134,24 @@ class SubmissionListCreateView(generics.ListCreateAPIView):
     
     def perform_create(self, serializer):
         event_id = self.kwargs.get('event_id')
+        if self.request.user.role != 'author':
+            raise serializers.ValidationError("Only authors can submit submissions.")
         serializer.save(author=self.request.user, event_id=event_id)
 
 
 class SubmissionDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Submission.objects.all()
     serializer_class = SubmissionSerializer
-    permission_classes = [IsAuthenticated, IsAuthorOrReadOnly]
+    permission_classes = [IsAuthenticated]
+
+    def perform_update(self, serializer):
+        submission = self.get_object()
+        if self.request.user.role == 'organizer' or self.request.user.role == 'super_admin':
+            serializer.save()
+            return
+        if self.request.user.role != 'reviewer' and submission.status != 'pending':
+            raise serializers.ValidationError("Cannot modify submission once review process has started.")
+        serializer.save()
 
 
 class MySubmissionsView(generics.ListAPIView):
@@ -145,7 +159,10 @@ class MySubmissionsView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        return Submission.objects.filter(author=self.request.user)
+        my_submissions= Submission.objects.filter(author=self.request.user) 
+        #remove reviews
+        my_submissions= my_submissions.prefetch_related(None)           
+        return my_submissions
 
 
 @api_view(['POST'])
@@ -154,13 +171,44 @@ def assign_reviewers(request, submission_id):
     try:
         submission = Submission.objects.get(id=submission_id)
         reviewer_ids = request.data.get('reviewer_ids', [])
-        
-        reviewers = User.objects.filter(id__in=reviewer_ids, role='reviewer')
-        submission.assigned_reviewers.set(reviewers)
-        submission.status = 'under_review'
-        submission.save()
-        
+        # Only the event organizer or super_admin may assign reviewers
+        if not (request.user == submission.event.organizer or request.user.role == 'super_admin'):
+            raise PermissionDenied('Only the event organizer or super admin can assign reviewers')
+
+        if not reviewer_ids:
+            return Response({'error': 'No reviewer_ids provided'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Accept IDs as strings or ints
+        try:
+            reviewer_ids_list = [int(rid) for rid in reviewer_ids]
+        except Exception:
+            # If conversion fails, still try using original list in query
+            reviewer_ids_list = reviewer_ids
+
+        reviewers = User.objects.filter(id__in=reviewer_ids_list, role='reviewer')
+
+        # Determine which IDs were not found or not reviewers
+        found_ids = list(reviewers.values_list('id', flat=True))
+        missing_ids = [rid for rid in reviewer_ids_list if rid not in found_ids]
+
+        # Add reviewers individually (do not overwrite existing assignments)
+        existing_ids = list(submission.assigned_reviewers.values_list('id', flat=True))
+        newly_assigned = []
+        already_assigned = []
         for reviewer in reviewers:
+            if reviewer.id in existing_ids:
+                already_assigned.append(reviewer.id)
+                continue
+            submission.assigned_reviewers.add(reviewer)
+            newly_assigned.append(reviewer.id)
+
+        # If there is at least one assigned reviewer, ensure status is under_review
+        if submission.assigned_reviewers.exists():
+            submission.status = 'under_review'
+        submission.save()
+
+        # Notify only newly assigned reviewers
+        for reviewer in reviewers.filter(id__in=newly_assigned):
             Notification.objects.create(
                 user=reviewer,
                 notification_type='review_assigned',
@@ -168,8 +216,13 @@ def assign_reviewers(request, submission_id):
                 message=f'You have been assigned to review: {submission.title}',
                 related_event=submission.event
             )
-        
-        return Response({'message': 'Reviewers assigned successfully'}, status=status.HTTP_200_OK)
+
+        return Response({
+            'message': 'Reviewers assigned successfully',
+            'newly_assigned_ids': newly_assigned,
+            'already_assigned_ids': already_assigned,
+            'missing_ids': missing_ids
+        }, status=status.HTTP_200_OK)
     except Submission.DoesNotExist:
         return Response({'error': 'Submission not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -191,9 +244,10 @@ class ReviewListCreateView(generics.ListCreateAPIView):
         submission = Submission.objects.get(id=submission_id)
         
         if self.request.user not in submission.assigned_reviewers.all():
-            return Response({'error': 'You are not assigned to review this submission'}, 
-                          status=status.HTTP_403_FORBIDDEN)
-        
+            # Don't return a Response here — raise to stop the create and return 403
+            raise PermissionDenied('You are not assigned to review this submission')
+        if submission.reviews.filter(reviewer=self.request.user).exists():
+            raise serializers.ValidationError("You have already submitted a review for this submission.")
         review = serializer.save(reviewer=self.request.user, submission=submission)
         
         reviews_count = submission.reviews.count()

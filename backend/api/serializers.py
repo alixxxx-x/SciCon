@@ -68,14 +68,32 @@ class EventDetailSerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     reviewer_name = serializers.CharField(source='reviewer.username', read_only=True)
     average_score = serializers.SerializerMethodField()
-    
+    relevance_score = serializers.IntegerField()
+    quality_score = serializers.IntegerField()
+    originality_score = serializers.IntegerField()
     class Meta:
         model = Review
         fields = '__all__'
-        read_only_fields = ['reviewer', 'reviewed_at']
+        read_only_fields = ['reviewer', 'reviewed_at', 'decision']
     
     def get_average_score(self, obj):
-        return round((obj.relevance_score + obj.quality_score + obj.originality_score) / 3, 2)
+        # Support both model instances and dict representations
+        try:
+            if isinstance(obj, dict):
+                rel = obj.get('relevance_score')
+                qual = obj.get('quality_score')
+                orig = obj.get('originality_score')
+            else:
+                rel = getattr(obj, 'relevance_score', None)
+                qual = getattr(obj, 'quality_score', None)
+                orig = getattr(obj, 'originality_score', None)
+
+            if rel is None or qual is None or orig is None:
+                return None
+
+            return round((rel + qual + orig) / 3, 2)
+        except Exception:
+            return None
 
 
 class SubmissionSerializer(serializers.ModelSerializer):
@@ -87,13 +105,52 @@ class SubmissionSerializer(serializers.ModelSerializer):
         model = Submission
         fields = '__all__'
         read_only_fields = ['author', 'submitted_at', 'updated_at', 'status']
-    
     def get_average_score(self, obj):
-        reviews = obj.reviews.all()
-        if not reviews:
+        # Handle QuerySet of Review instances or a list of dicts
+        try:
+            reviews = getattr(obj, 'reviews', None)
+            if reviews is None:
+                return None
+
+            # If it's a manager/queryset, get all()
+            if hasattr(reviews, 'all'):
+                iterable = reviews.all()
+            else:
+                iterable = reviews
+
+            scores = []
+            for r in iterable:
+                if isinstance(r, dict):
+                    rel = r.get('relevance_score')
+                    qual = r.get('quality_score')
+                    orig = r.get('originality_score')
+                else:
+                    rel = getattr(r, 'relevance_score', None)
+                    qual = getattr(r, 'quality_score', None)
+                    orig = getattr(r, 'originality_score', None)
+
+                if rel is None or qual is None or orig is None:
+                    continue
+
+                scores.append((rel + qual + orig) / 3)
+
+            if not scores:
+                return None
+
+            return round(sum(scores) / len(scores), 2)
+        except Exception:
             return None
-        total = sum((r.relevance_score + r.quality_score + r.originality_score) / 3 for r in reviews)
-        return round(total / len(reviews), 2)
+
+
+class SubmissionAuthorSerializer(serializers.ModelSerializer):
+    """Serializer for authors viewing their own submissions: hides reviews and average_score."""
+    author = UserSerializer(read_only=True)
+
+    class Meta:
+        model = Submission
+        # Do not include the `reviews` related field or the computed `average_score`
+        fields = '__all__'
+        read_only_fields = ['author', 'submitted_at', 'updated_at', 'status']
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
