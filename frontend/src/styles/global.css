@@ -178,3 +178,7 @@ button{
 background-color: rgba(59, 130, 246, 0.3);
 color: var(--color-light);
 }
+input, textarea, select {
+  color: black !important;
+  background-color: white !important;
+}
