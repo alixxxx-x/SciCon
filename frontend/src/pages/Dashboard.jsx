@@ -58,6 +58,13 @@ const Dashboard = () => {
         fetchDashboardData();
     }, []);
 
+    // Redirect organizers to their dedicated dashboard
+    useEffect(() => {
+        if (userInfo?.role === 'organizer') {
+            navigate('/dashboard-organizer');
+        }
+    }, [userInfo, navigate]);
+
     const handleLogout = () => {
         localStorage.removeItem('access');
         localStorage.removeItem('refresh');
@@ -250,12 +257,6 @@ const Dashboard = () => {
                                 <span className="ml-2 text-blue-400 capitalize">({userInfo?.role?.replace('_', ' ')})</span>
                             </p>
                         </div>
-                        <button
-                            onClick={() => navigate('/events/create')}
-                            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium transition-all shadow-lg shadow-blue-600/20 active:scale-95"
-                        >
-                            <Plus size={18} /> New Event
-                        </button>
                     </div>
 
                     {/* Stats Grid */}
@@ -380,9 +381,9 @@ const Dashboard = () => {
                             </div>
                         </div>
                     </div>
-                </div>
-            </main>
-        </div>
+                </div >
+            </main >
+        </div >
     );
 };
 

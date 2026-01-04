@@ -63,6 +63,13 @@ class EventDetailSerializer(serializers.ModelSerializer):
     
     def get_registrations_count(self, obj):
         return obj.registrations.count()
+    
+
+class EventStatusSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ['status']
+
 
 
 class ReviewSerializer(serializers.ModelSerializer):
