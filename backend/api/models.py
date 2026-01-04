@@ -3,8 +3,8 @@ from django.contrib.auth.models import AbstractUser
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.utils import timezone
 
+#custom User model for all the users
 class User(AbstractUser):
-    """Custom User model for all platform users"""
     
     ROLE_CHOICES = [
         ('super_admin', 'Super Administrator'),
@@ -34,8 +34,9 @@ class User(AbstractUser):
         return f"{self.email} ({self.get_role_display()})"
 
 
+#scientific events they can be (congresses, seminars, workshops...)
 class Event(models.Model):
-    """Scientific events (congresses, seminars, workshops, etc.)"""
+    
     
     EVENT_TYPE_CHOICES = [
         ('congress', 'Congress'),
@@ -96,8 +97,9 @@ class Event(models.Model):
         return f"{self.title} ({self.start_date.year})"
 
 
+#Sessions within an event
 class Session(models.Model):
-    """Sessions within an event"""
+    
     
     SESSION_TYPE_CHOICES = [
         ('plenary', 'Plenary Session'),
@@ -126,8 +128,9 @@ class Session(models.Model):
         return f"{self.title} - {self.date}"
 
 
+#communication proposals submitted by authors
 class Submission(models.Model):
-    """Communication proposals submitted by authors"""
+    
     
     TYPE_CHOICES = [
         ('oral', 'Oral Presentation'),
@@ -171,8 +174,10 @@ class Submission(models.Model):
         return f"{self.title} - {self.author.email}"
 
 
+
+#Reviews of submissions by scientific committee members
 class Review(models.Model):
-    """Reviews of submissions by scientific committee members"""
+    
     
     DECISION_CHOICES = [
         ('accept', 'Accept'),
@@ -200,8 +205,9 @@ class Review(models.Model):
         return f"Review by {self.reviewer.email} for {self.submission.title}"
 
 
+#event registrations
 class Registration(models.Model):
-    """Event registrations"""
+    
     
     REGISTRATION_TYPE_CHOICES = [
         ('participant', 'Participant'),
@@ -230,8 +236,9 @@ class Registration(models.Model):
         return f"{self.user.email} - {self.event.title}"
 
 
+#Parallel workshops within an event
 class Workshop(models.Model):
-    """Parallel workshops within an event"""
+    
     
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='workshops')
     leader = models.ForeignKey(User, on_delete=models.CASCADE, related_name='led_workshops')
@@ -253,10 +260,11 @@ class Workshop(models.Model):
     
     def __str__(self):
         return f"{self.title} - {self.date}"
+    
 
-
+#Questions asked during sessions
 class Question(models.Model):
-    """Questions asked during sessions"""
+    
     
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='questions')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='questions')
@@ -274,8 +282,9 @@ class Question(models.Model):
         return f"Question by {self.user.email} in {self.session.title}"
 
 
+#postsession surveys
 class Survey(models.Model):
-    """Post-session surveys"""
+    
     
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='surveys')
     session = models.ForeignKey(Session, on_delete=models.CASCADE, related_name='surveys', null=True, blank=True)
@@ -288,9 +297,9 @@ class Survey(models.Model):
     def __str__(self):
         return f"{self.title} - {self.event.title}"
 
-
+#Questions within a survey
 class SurveyQuestion(models.Model):
-    """Questions within a survey"""
+    
     
     QUESTION_TYPE_CHOICES = [
         ('rating', 'Rating (1-5)'),
@@ -312,8 +321,9 @@ class SurveyQuestion(models.Model):
         return self.question_text
 
 
+#User responses to surveys
 class SurveyResponse(models.Model):
-    """User responses to surveys"""
+    
     
     survey = models.ForeignKey(Survey, on_delete=models.CASCADE, related_name='responses')
     question = models.ForeignKey(SurveyQuestion, on_delete=models.CASCADE, related_name='responses')
@@ -326,9 +336,8 @@ class SurveyResponse(models.Model):
     def __str__(self):
         return f"Response by {self.user.email}"
 
-
+#Generated certificates for participants
 class Certificate(models.Model):
-    """Generated certificates for participants"""
     
     CERTIFICATE_TYPE_CHOICES = [
         ('participation', 'Participation'),
@@ -350,9 +359,9 @@ class Certificate(models.Model):
     def __str__(self):
         return f"{self.get_certificate_type_display()} - {self.user.email}"
 
-
+#Internal messaging system
 class Message(models.Model):
-    """Internal messaging system"""
+    
     
     sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_messages')
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='received_messages')
