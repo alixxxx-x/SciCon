@@ -9,7 +9,7 @@ export default function HomePage() {
   const [currentSpeaker, setCurrentSpeaker] = useState(0);
   const [rotatingText, setRotatingText] = useState("CONFERENCES");
   const [email, setEmail] = useState("");
-  
+
   // Axios connection states
   const [backendData, setBackendData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,11 +26,11 @@ export default function HomePage() {
   // Array of texts that rotate in the hero section
   const rotatingTexts = ["CONFERENCES", "WORKSHOPS", "SEMINARS", "TRAININGS", "MEETUPS"];
 
-// AXIOS CONNECTION TO DJANGO 
-useEffect(() => {
-  console.log("Home page loaded - Axios is ready for API calls");
-  setLoading(false);
-}, []);
+  // AXIOS CONNECTION TO DJANGO 
+  useEffect(() => {
+    console.log("Home page loaded - Axios is ready for API calls");
+    setLoading(false);
+  }, []);
   // Rotate the text every 3 seconds
   useEffect(() => {
     const interval = setInterval(() => {
@@ -183,16 +183,16 @@ useEffect(() => {
           Connecting to Django backend...
         </div>
       )}
-      
+
       {connectionStatus === "success" && (
         <div className="connection-status success">
-           Successfully connected to Django backend!
+          Successfully connected to Django backend!
         </div>
       )}
-      
+
       {connectionStatus === "error" && (
         <div className="connection-status error">
-           Backend connection failed. Make sure Django server is running.
+          Backend connection failed. Make sure Django server is running.
         </div>
       )}
 
@@ -213,7 +213,10 @@ useEffect(() => {
               </h2>
             </div>
           </div>
-          <button className="hero-cta-button">EXPLORE EVENTS</button>
+          <div className="flex gap-4">
+            <button className="hero-cta-button">EXPLORE EVENTS</button>
+            <a href="/dashboard" className="hero-cta-button bg-indigo-600 hover:bg-indigo-700 border-none">DASHBOARD</a>
+          </div>
         </div>
       </section>
 
@@ -289,7 +292,7 @@ useEffect(() => {
             <div>
               <img
                 src="/src/assets/algeria-doctors-meeting.jpg"
-              
+
                 className="stats-image"
               />
             </div>
@@ -416,7 +419,7 @@ useEffect(() => {
       {/* Featured Speakers Section */}
       <section className="speakers-section">
         <div className="speakers-background">
-       
+
         </div>
 
         <div className="speakers-container">

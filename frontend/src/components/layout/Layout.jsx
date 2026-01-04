@@ -38,14 +38,14 @@ export default function Layout({ children }) {
               <Link to="/workshops" className="nav-link">Workshops</Link>
               <Link to="/about" className="nav-link">About Us</Link>
               <Link to="/contact" className="nav-link">Contact Us</Link>
-              
+
               {/* Show Avatar ONLY when logged in */}
               {isLoggedIn ? (
                 <div className="user-dropdown">
                   <button className="avatar-button">
                     <span className="avatar">👤</span>
                   </button>
-                  
+
                   <div className="dropdown-menu">
                     <Link to="/profile" className="dropdown-item">Profile</Link>
                     <Link to="/settings" className="dropdown-item">Settings</Link>
@@ -53,17 +53,17 @@ export default function Layout({ children }) {
                   </div>
                 </div>
               ) : (
-                // Show Login/Register when NOT logged in
-                <>
-                  <Link to="/login" className="nav-button">Login</Link>
-                  <Link to="/register" className="nav-button">Register</Link>
-                </>
+                <div className="user-dropdown">
+                  <button className="avatar-button">
+                    <span className="avatar">👤</span>
+                  </button>
+                </div>
               )}
             </div>
 
             {/* Mobile Menu Button */}
-            <button 
-              className="mobile-menu-toggle" 
+            <button
+              className="mobile-menu-toggle"
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? "Close menu" : "Open menu"}
             >
@@ -90,7 +90,7 @@ export default function Layout({ children }) {
             <Link to="/contact" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
               Contact Us
             </Link>
-            
+
             {/* Mobile: Show Login/Register or Avatar options */}
             {isLoggedIn ? (
               <>
@@ -105,14 +105,7 @@ export default function Layout({ children }) {
                 </button>
               </>
             ) : (
-              <>
-                <Link to="/login" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
-                  Login
-                </Link>
-                <Link to="/register" className="mobile-nav-link" onClick={() => setMenuOpen(false)}>
-                  Register
-                </Link>
-              </>
+              null
             )}
           </div>
         )}
