@@ -7,9 +7,8 @@ from .models import (
     Certificate, Message, Notification
 )
 
-# ============================================
+
 # User Admin
-# ============================================
 
 @admin.register(User)
 class UserAdmin(BaseUserAdmin):
@@ -46,9 +45,8 @@ class UserAdmin(BaseUserAdmin):
     )
 
 
-# ============================================
+
 # Event Admin
-# ============================================
 
 class SessionInline(admin.TabularInline):
     model = Session
@@ -126,9 +124,9 @@ class EventAdmin(admin.ModelAdmin):
     registrations_count.short_description = 'Registrations'
 
 
-# ============================================
+
 # Session Admin
-# ============================================
+
 
 @admin.register(Session)
 class SessionAdmin(admin.ModelAdmin):
@@ -151,9 +149,9 @@ class SessionAdmin(admin.ModelAdmin):
     )
 
 
-# ============================================
+
 # Submission Admin
-# ============================================
+
 
 class ReviewInline(admin.TabularInline):
     model = Review
@@ -218,9 +216,9 @@ class SubmissionAdmin(admin.ModelAdmin):
     average_score.short_description = 'Avg Score'
 
 
-# ============================================
+
 # Review Admin
-# ============================================
+
 
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):
@@ -250,9 +248,9 @@ class ReviewAdmin(admin.ModelAdmin):
     average.short_description = 'Average Score'
 
 
-# ============================================
+
 # Registration Admin
-# ============================================
+
 
 @admin.register(Registration)
 class RegistrationAdmin(admin.ModelAdmin):
@@ -290,9 +288,9 @@ class RegistrationAdmin(admin.ModelAdmin):
     payment_status_badge.short_description = 'Payment Status'
 
 
-# ============================================
+
 # Workshop Admin
-# ============================================
+
 
 @admin.register(Workshop)
 class WorkshopAdmin(admin.ModelAdmin):
@@ -330,13 +328,13 @@ class WorkshopAdmin(admin.ModelAdmin):
     participants_count.short_description = 'Participants'
 
 
-# ============================================
+
 # Question Admin
-# ============================================
+
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ['content_preview', 'user', 'session', 'is_answered', 'likes', 'created_at']
+    list_display = ['content_preview', 'user', 'session', 'is_answered', 'created_at']
     list_filter = ['is_answered', 'created_at', 'session__event']
     search_fields = ['content', 'answer', 'user__email', 'session__title']
     date_hierarchy = 'created_at'
@@ -348,9 +346,6 @@ class QuestionAdmin(admin.ModelAdmin):
         }),
         ('Answer', {
             'fields': ('is_answered', 'answer')
-        }),
-        ('Engagement', {
-            'fields': ('likes',)
         }),
     )
     
@@ -392,10 +387,10 @@ class SurveyAdmin(admin.ModelAdmin):
 
 @admin.register(SurveyQuestion)
 class SurveyQuestionAdmin(admin.ModelAdmin):
-    list_display = ['question_text', 'survey', 'question_type', 'order']
+    list_display = ['question_text', 'survey', 'question_type']
     list_filter = ['question_type', 'survey__event']
     search_fields = ['question_text', 'survey__title']
-    ordering = ['survey', 'order']
+    ordering = ['survey']
 
 
 @admin.register(SurveyResponse)

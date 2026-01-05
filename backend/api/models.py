@@ -34,7 +34,7 @@ class User(AbstractUser):
         return f"{self.email} ({self.get_role_display()})"
 
 
-#scientific events they can be (congresses, seminars, workshops...)
+#scientific events they can be (congresses, seminars, colloquiums...)
 class Event(models.Model):
     
     
@@ -42,7 +42,7 @@ class Event(models.Model):
         ('congress', 'Congress'),
         ('seminar', 'Seminar'),
         ('scientific_day', 'Scientific Day'),
-        ('workshop', 'Workshop'),
+        #('workshop', 'Workshop'),
         ('colloquium', 'Colloquium'),
     ]
     
@@ -271,16 +271,19 @@ class Question(models.Model):
     content = models.TextField()
     is_answered = models.BooleanField(default=False)
     answer = models.TextField(blank=True)
-    likes = models.IntegerField(default=0)
-    
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['-likes', '-created_at']
+        
+        ordering = ['-created_at']
     
     def __str__(self):
         return f"Question by {self.user.email} in {self.session.title}"
 
+
+class QuestionLikes(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
 
 #postsession surveys
 class Survey(models.Model):
@@ -378,9 +381,9 @@ class Message(models.Model):
     def __str__(self):
         return f"From {self.sender.email} to {self.recipient.email}"
 
-
+#System notifications
 class Notification(models.Model):
-    """System notifications"""
+    
     
     NOTIFICATION_TYPE_CHOICES = [
         ('submission_accepted', 'Submission Accepted'),
