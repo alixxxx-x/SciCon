@@ -39,14 +39,14 @@ urlpatterns = [
     path('events/<int:event_id>/registrations/', RegistrationListCreateView.as_view(), name='registrations'),#[IsAuthenticated]
     path('registrations/<int:pk>/', RegistrationDetailView.as_view(), name='registration_detail'),#[IsAuthenticated]
     path('registrations/my-registrations/', MyRegistrationsView.as_view(), name='my_registrations'),#[IsAuthenticated]
-    
+    path('registrations/<int:pk>/payment/', AssignPaymentView.as_view(), name='payment-status-update'), #[IsOrganizer, IsSuperAdmin]
     # Workshops
     path('events/<int:event_id>/workshops/', WorkshopListCreateView.as_view(), name='workshops'),#[IsAuthenticated]
     path('workshops/<int:pk>/', WorkshopDetailView.as_view(), name='workshop_detail'),#[IsAuthenticated]
     path('workshops/<int:workshop_id>/register/', register_workshop, name='workshop_register'),#[IsAuthenticated]
     
     # Questions
-    path('sessions/<int:session_id>/questions/', QuestionListCreateView.as_view(), name='questions'),#[IsAuthenticated]
+    path('sessions/<int:session_id>/questions/', QuestionListCreateView.as_view(), name='questions'),#[IsAuthorOrReadOnly]
     path('questions/<int:question_id>/like/', like_question, name='question_like'),
     path('questions/<int:question_id>/answer/', answer_question, name='question_answer'),
     

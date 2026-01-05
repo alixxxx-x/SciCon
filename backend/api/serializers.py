@@ -21,7 +21,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id', 'username', 'email', 'role', 'institution', 
                   'research_domain', 'bio', 'photo', 'country', 'phone']
-        read_only_fields = ['id', 'email', 'role']
+        read_only_fields = ['id', 'role']
 
 
 class SessionSerializer(serializers.ModelSerializer):
@@ -30,7 +30,7 @@ class SessionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Session
         fields = '__all__'
-        read_only_fields = ['created_at']
+        read_only_fields = ['created_at', 'event']
 
 
 class EventListSerializer(serializers.ModelSerializer):
@@ -81,7 +81,7 @@ class ReviewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Review
         fields = '__all__'
-        read_only_fields = ['reviewer', 'reviewed_at', 'decision']
+        read_only_fields = ['reviewer', 'reviewed_at', 'decision', 'submission']
     
     def get_average_score(self, obj):
         # Support both model instances and dict representations
@@ -167,7 +167,7 @@ class RegistrationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Registration
         fields = '__all__'
-        read_only_fields = ['user', 'registered_at']
+        read_only_fields = ['user', 'registered_at', 'event']
 
 
 class WorkshopSerializer(serializers.ModelSerializer):
@@ -178,7 +178,7 @@ class WorkshopSerializer(serializers.ModelSerializer):
     class Meta:
         model = Workshop
         fields = '__all__'
-        read_only_fields = ['leader', 'created_at']
+        read_only_fields = ['leader', 'created_at', 'event']
     
     def get_participants_count(self, obj):
         return obj.participants.count()
@@ -193,7 +193,7 @@ class QuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = Question
         fields = '__all__'
-        read_only_fields = ['user', 'created_at', 'likes']
+        read_only_fields = ['user', 'created_at', 'session']
 
 
 class SurveyQuestionSerializer(serializers.ModelSerializer):

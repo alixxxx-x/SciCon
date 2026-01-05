@@ -253,18 +253,24 @@ class ReviewListCreateView(generics.ListCreateAPIView):
     
     def get_queryset(self):
         submission_id = self.kwargs.get('submission_id')
-        return Review.objects.filter(submission_id=submission_id)
+        if self.request.user.role == 'reviewer':
+            user=self.request.user.id
+            return Review.objects.filter(reviewer_id=user ,submission_id=submission_id)
+        elif self.request.user.role in ['super-admin', 'organizer']:
+            return Review.objects.filter(submission_id=submission_id)
+        else:
+            return PermissionDenied("You don't have the privilege to access this information.")
+                
     
     def perform_create(self, serializer):
         submission_id = self.kwargs.get('submission_id')
         submission = Submission.objects.get(id=submission_id)
         
         if self.request.user not in submission.assigned_reviewers.all():
-            # Don't return a Response here — raise to stop the create and return 403
             raise PermissionDenied('You are not assigned to review this submission')
         if submission.reviews.filter(reviewer=self.request.user).exists():
-            raise serializers.ValidationError("You have already submitted a review for this submission.")
-        review = serializer.save(reviewer=self.request.user, submission=submission)
+            raise PermissionDenied("You have already submitted a review for this submission.")
+        serializer.save(reviewer=self.request.user, submission=submission)
         
         reviews_count = submission.reviews.count()
         if reviews_count >= 2:
@@ -312,12 +318,15 @@ class RegistrationListCreateView(generics.ListCreateAPIView):
         event_id = self.kwargs.get('event_id')
         serializer.save(user=self.request.user, event_id=event_id)
 
-
 class RegistrationDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Registration.objects.all()
     serializer_class = RegistrationSerializer
     permission_classes = [IsAuthenticated]
 
+    def perform_update(self, serializer):
+        if 'payment_status' in self.request.data:
+            raise PermissionDenied('This endpoint cannot set payment status')
+        serializer.save()
 
 class MyRegistrationsView(generics.ListAPIView):
     serializer_class = RegistrationSerializer
@@ -326,7 +335,10 @@ class MyRegistrationsView(generics.ListAPIView):
     def get_queryset(self):
         return Registration.objects.filter(user=self.request.user)
 
-
+class AssignPaymentView(generics.UpdateAPIView):
+    queryset = Registration.objects.all()
+    serializer_class= RegistrationSerializer
+    permission_classes = [IsOrganizer | IsSuperAdmin]
 
 
 # Workshop Views
@@ -358,7 +370,6 @@ def register_workshop(request, workshop_id):
         
         if workshop.participants.count() >= workshop.max_participants:
             return Response({'error': 'Workshop is full'}, status=status.HTTP_400_BAD_REQUEST)
-        
         workshop.participants.add(request.user)
         return Response({'message': 'Successfully registered to workshop'}, status=status.HTTP_200_OK)
     except Workshop.DoesNotExist:
@@ -372,7 +383,7 @@ def register_workshop(request, workshop_id):
 
 class QuestionListCreateView(generics.ListCreateAPIView):
     serializer_class = QuestionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthorOrReadOnly]
     
     def get_queryset(self):
         session_id = self.kwargs.get('session_id')
@@ -388,19 +399,26 @@ class QuestionListCreateView(generics.ListCreateAPIView):
 def like_question(request, question_id):
     try:
         question = Question.objects.get(id=question_id)
-        question.likes += 1
-        question.save()
-        return Response({'likes': question.likes}, status=status.HTTP_200_OK)
+        if QuestionLikes.objects.filter(question=question, user=request.user).exists():
+            return Response({'error': 'You have already liked this question'}, status=status.HTTP_400_BAD_REQUEST)
+
+        QuestionLikes.objects.create(question=question, user=request.user)
+        likes_count = QuestionLikes.objects.filter(question=question).count()
+        return Response({'likes': likes_count}, status=status.HTTP_200_OK)
     except Question.DoesNotExist:
         return Response({'error': 'Question not found'}, status=status.HTTP_404_NOT_FOUND)
 
 
 @api_view(['POST'])
-@permission_classes([IsAuthenticated, IsEventOrganizer])
+@permission_classes([IsAuthenticated, IsAuthorOrReadOnly])
 def answer_question(request, question_id):
     try:
         question = Question.objects.get(id=question_id)
         question.answer = request.data.get('answer', '')
+        if question.user != request.user:
+            raise PermissionDenied('Only the question author can answer this question')
+        if question.answer == '':
+            raise serializers.ValidationError({'detail': "Answer can't be empty."})
         question.is_answered = True
         question.save()
         return Response(QuestionSerializer(question).data, status=status.HTTP_200_OK)
