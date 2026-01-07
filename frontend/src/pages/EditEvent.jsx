@@ -10,9 +10,11 @@ import {
     Clock,
     CheckCircle2,
     AlertCircle,
-    Mail
+    Mail,
+    Loader2
 } from 'lucide-react';
 import api from '../api';
+import DashboardLayout from '../components/layout/DashboardLayout';
 
 const EditEvent = () => {
     const { id } = useParams();
@@ -51,14 +53,13 @@ const EditEvent = () => {
             const response = await api.get(`/api/events/${id}/`);
             const data = response.data;
 
-            // Format dates for input fields (YYYY-MM-DD or YYYY-MM-DDThh:mm)
             const formatDate = (dateString, includeTime = false) => {
                 if (!dateString) return '';
                 const date = new Date(dateString);
                 if (includeTime) {
-                    return date.toISOString().slice(0, 16); // For datetime-local
+                    return date.toISOString().slice(0, 16);
                 }
-                return date.toISOString().split('T')[0]; // For date
+                return date.toISOString().split('T')[0];
             };
 
             setFormData({
@@ -98,12 +99,6 @@ const EditEvent = () => {
         setSubmitting(true);
         setError(null);
 
-        if (new Date(formData.start_date) > new Date(formData.end_date)) {
-            setError("Start date cannot be after end date.");
-            setSubmitting(false);
-            return;
-        }
-
         try {
             await api.put(`/api/events/${id}/`, formData);
             setSuccess(true);
@@ -112,229 +107,147 @@ const EditEvent = () => {
             }, 2000);
         } catch (err) {
             console.error("Error updating event:", err);
-            setError(err.response?.data ? Object.entries(err.response.data).map(([k, v]) => `${k}: ${v}`).join(', ') : "Failed to update event.");
+            setError("Failed to update event. Please check your data.");
         } finally {
             setSubmitting(false);
         }
     };
 
     if (loading) {
-        return <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center text-white">Loading...</div>;
+        return (
+            <DashboardLayout>
+                <div className="flex h-screen items-center justify-center">
+                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                </div>
+            </DashboardLayout>
+        );
     }
 
     if (success) {
         return (
-            <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center p-6">
-                <div className="bg-[#111111] border border-green-500/30 p-12 rounded-[48px] text-center max-w-md w-full shadow-2xl shadow-green-500/10">
-                    <div className="w-20 h-20 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-8">
-                        <CheckCircle2 className="w-10 h-10 text-green-500" />
+            <DashboardLayout>
+                <div className="flex flex-col items-center justify-center py-20 text-center">
+                    <div className="w-20 h-20 bg-green-50 rounded-full flex items-center justify-center text-green-600 mb-6">
+                        <CheckCircle2 size={40} />
                     </div>
-                    <h2 className="text-3xl font-black mb-4">Event Updated!</h2>
-                    <p className="text-gray-400 font-medium mb-0">Your event has been successfully updated.</p>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Event Updated!</h2>
+                    <p className="text-gray-500">Redirecting to management dashboard...</p>
                 </div>
-            </div>
+            </DashboardLayout>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-gray-100 font-sans pb-20">
-            {/* Header */}
-            <header className="fixed top-0 left-0 right-0 z-50 bg-[#0a0a0a]/80 backdrop-blur-md border-b border-white/5 py-6">
-                <div className="max-w-7xl mx-auto px-6 flex items-center justify-between">
-                    <div className="flex items-center gap-6">
-                        <button onClick={() => navigate('/dashboard-organizer')} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
-                            <ArrowLeft className="w-6 h-6" />
-                        </button>
-                        <h1 className="text-2xl font-black tracking-tight italic">Edit <span className="text-indigo-500">Event</span></h1>
+        <DashboardLayout>
+            <div className="mb-8">
+                <button
+                    onClick={() => navigate('/dashboard-organizer')}
+                    className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors mb-4 text-sm font-semibold"
+                >
+                    <ArrowLeft size={16} /> Back to Dashboard
+                </button>
+                <h1 className="text-2xl font-bold text-gray-900">Modify Event Details</h1>
+                <p className="text-gray-500">Update the timeline, location, or general information of your scientific event.</p>
+            </div>
+
+            <form onSubmit={handleSubmit} className="max-w-4xl space-y-8 pb-20">
+                {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center gap-3 font-bold">
+                        <AlertCircle size={20} /> {error}
+                    </div>
+                )}
+
+                <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <div className="p-6 border-b border-gray-100 bg-gray-50/50">
+                        <h3 className="font-bold text-gray-900 flex items-center gap-2 uppercase tracking-tight text-sm">
+                            <BadgeInfo size={18} className="text-blue-600" />
+                            Core Information
+                        </h3>
+                    </div>
+                    <div className="p-8 space-y-6">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Event Title</label>
+                            <input
+                                name="title" required value={formData.title} onChange={handleChange}
+                                className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-blue-500 font-bold"
+                            />
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Event Type</label>
+                                <select name="event_type" value={formData.event_type} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-blue-500 font-bold">
+                                    <option value="congress">Congress</option>
+                                    <option value="seminar">Seminar</option>
+                                    <option value="scientific_day">Scientific Day</option>
+                                    <option value="workshop">Workshop</option>
+                                </select>
+                            </div>
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Public Status</label>
+                                <select name="status" value={formData.status} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-blue-500 font-bold">
+                                    <option value="draft">Draft (Hidden)</option>
+                                    <option value="open_call">Open Call (Visible)</option>
+                                    <option value="program_ready">Program Ready</option>
+                                    <option value="completed">Completed</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Scientific Theme</label>
+                            <input name="theme" required value={formData.theme} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl p-3 outline-none focus:border-blue-500 font-bold" />
+                        </div>
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Description</label>
+                            <textarea name="description" required rows="5" value={formData.description} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-xl p-4 outline-none focus:border-blue-500 font-medium leading-relaxed resize-none" />
+                        </div>
                     </div>
                 </div>
-            </header>
 
-            <main className="pt-32 max-w-5xl mx-auto px-6 text-left">
-                <form onSubmit={handleSubmit} className="space-y-12">
-                    {error && (
-                        <div className="p-6 bg-red-500/10 border border-red-500/20 rounded-3xl flex items-start gap-4">
-                            <AlertCircle className="w-6 h-6 text-red-400 shrink-0" />
-                            <div>
-                                <h4 className="font-black text-red-400 text-sm uppercase tracking-widest mb-1">Update Error</h4>
-                                <p className="text-sm text-red-400/80 font-medium">{error}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-6">
+                        <h3 className="font-bold text-gray-900 flex items-center gap-2 uppercase tracking-tight text-xs border-b border-gray-50 pb-4">
+                            <Clock size={16} className="text-orange-500" />
+                            Timeline & Deadlines
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Start Date</label>
+                                <input name="start_date" type="date" required value={formData.start_date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs font-bold" />
                             </div>
-                        </div>
-                    )}
-
-                    {/* Section 1: Basic Information */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center">
-                                <BadgeInfo className="w-6 h-6 text-indigo-500" />
+                            <div className="space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">End Date</label>
+                                <input name="end_date" type="date" required value={formData.end_date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs font-bold" />
                             </div>
-                            <h2 className="text-2xl font-black">Basic Information</h2>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <div className="md:col-span-2 space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Event Full Title</label>
-                                <input
-                                    name="title" required
-                                    value={formData.title} onChange={handleChange}
-                                    className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-bold placeholder:text-gray-700"
-                                />
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Event Type</label>
-                                <div className="relative">
-                                    <select
-                                        name="event_type" value={formData.event_type} onChange={handleChange}
-                                        className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 appearance-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-bold"
-                                    >
-                                        <option value="congress">Congress</option>
-                                        <option value="seminar">Seminar</option>
-                                        <option value="scientific_day">Scientific Day</option>
-                                        <option value="workshop">Workshop</option>
-                                        <option value="colloquium">Colloquium</option>
-                                    </select>
-                                    <Layers className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-700 pointer-events-none" />
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Status</label>
-                                <div className="relative">
-                                    <select
-                                        name="status" value={formData.status} onChange={handleChange}
-                                        className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 appearance-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-bold"
-                                    >
-                                        <option value="draft">Draft (Hidden)</option>
-                                        <option value="open_call">Open Call (Visible)</option>
-                                        <option value="program_ready">Program Ready</option>
-                                        <option value="completed">Completed</option>
-                                    </select>
-                                    <CheckCircle2 className="absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-700 pointer-events-none" />
-                                </div>
-                            </div>
-
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Main Theme</label>
-                                <input
-                                    name="theme" required
-                                    value={formData.theme} onChange={handleChange}
-                                    className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-bold placeholder:text-gray-700"
-                                />
-                            </div>
-
-                            <div className="md:col-span-2 space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Detailed Description</label>
-                                <textarea
-                                    name="description" required rows="6"
-                                    value={formData.description} onChange={handleChange}
-                                    className="w-full bg-[#111111] border border-white/5 rounded-3xl p-6 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all font-medium leading-relaxed placeholder:text-gray-700"
-                                />
+                            <div className="col-span-2 space-y-2">
+                                <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Paper Submission Deadline</label>
+                                <input name="submission_deadline" type="datetime-local" required value={formData.submission_deadline} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-lg p-2 text-xs font-bold" />
                             </div>
                         </div>
                     </div>
-
-                    {/* Section 2: Important Dates */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center">
-                                <Clock className="w-6 h-6 text-indigo-500" />
-                            </div>
-                            <h2 className="text-2xl font-black">Important Dates</h2>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Start Date</label>
-                                <input name="start_date" type="date" required value={formData.start_date} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold" />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">End Date</label>
-                                <input name="end_date" type="date" required value={formData.end_date} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold" />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Submission Deadline</label>
-                                <input name="submission_deadline" type="datetime-local" required value={formData.submission_deadline} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold" />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Notification Date</label>
-                                <input name="notification_date" type="date" required value={formData.notification_date} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold" />
+                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm p-6 space-y-6">
+                        <h3 className="font-bold text-gray-900 flex items-center gap-2 uppercase tracking-tight text-xs border-b border-gray-50 pb-4">
+                            <MapPin size={16} className="text-red-500" />
+                            Physical Venue
+                        </h3>
+                        <div className="space-y-4">
+                            <input name="venue" placeholder="Venue Name" value={formData.venue} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-xs font-bold" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <input name="city" placeholder="City" value={formData.city} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-xs font-bold" />
+                                <input name="country" placeholder="Country" value={formData.country} onChange={handleChange} className="w-full bg-gray-50 border border-gray-100 rounded-lg p-3 text-xs font-bold" />
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    {/* Section 3: Venue & Location */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center">
-                                <MapPin className="w-6 h-6 text-indigo-500" />
-                            </div>
-                            <h2 className="text-2xl font-black">Venue & Location</h2>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div className="lg:col-span-2 space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Venue Name</label>
-                                <input name="venue" required value={formData.venue} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold placeholder:text-gray-700" />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">City</label>
-                                <input name="city" required value={formData.city} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold placeholder:text-gray-700" />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Country</label>
-                                <input name="country" required value={formData.country} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold placeholder:text-gray-700" />
-                            </div>
-                            <div className="lg:col-span-2 space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Full Address</label>
-                                <input name="address" value={formData.address} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold placeholder:text-gray-700" />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Section 4: Contact & Fees */}
-                    <div className="space-y-8">
-                        <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center">
-                                <Mail className="w-6 h-6 text-indigo-500" />
-                            </div>
-                            <h2 className="text-2xl font-black">Contact & Registration</h2>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                            <div className="lg:col-span-2 space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Contact Email</label>
-                                <input name="contact_email" type="email" required value={formData.contact_email} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold placeholder:text-gray-700" />
-                            </div>
-                            <div className="lg:col-span-2 space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Contact Phone</label>
-                                <input name="contact_phone" value={formData.contact_phone} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold placeholder:text-gray-700" />
-                            </div>
-                            <div className="lg:col-span-3 space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Website URL</label>
-                                <input name="website" type="url" value={formData.website} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold placeholder:text-gray-700" />
-                            </div>
-                            <div className="space-y-3">
-                                <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-500 ml-1">Registration Fee ($)</label>
-                                <input name="registration_fee" type="number" step="0.01" value={formData.registration_fee} onChange={handleChange} className="w-full bg-[#111111] border border-white/5 rounded-2xl p-4 focus:ring-2 focus:ring-indigo-500/50 font-bold" />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="pt-12 flex items-center justify-end gap-6 border-t border-white/5">
-                        <button type="button" onClick={() => navigate('/dashboard-organizer')} className="px-8 py-4 text-gray-500 font-black uppercase tracking-widest hover:text-white transition-all">Cancel</button>
-                        <button
-                            type="submit"
-                            disabled={submitting}
-                            className="px-12 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all shadow-xl shadow-indigo-600/20 disabled:bg-gray-800 disabled:text-gray-600 flex items-center gap-3"
-                        >
-                            {submitting ? "Updating..." : "Update Event"}
-                            {!submitting && <Save className="w-5 h-5" />}
-                        </button>
-                    </div>
-                </form>
-            </main>
-        </div>
+                <div className="flex justify-end gap-4">
+                    <button type="button" onClick={() => navigate('/dashboard-organizer')} className="px-8 py-4 text-gray-400 font-bold uppercase tracking-widest text-sm hover:text-gray-900 transition-colors">Discard</button>
+                    <button type="submit" disabled={submitting} className="bg-gray-900 hover:bg-black text-white px-12 py-4 rounded-xl font-black uppercase tracking-[0.2em] shadow-xl transition-all flex items-center gap-2">
+                        {submitting ? <Loader2 className="animate-spin" size={20} /> : <Save size={20} />}
+                        Confirm Changes
+                    </button>
+                </div>
+            </form>
+        </DashboardLayout>
     );
 };
 

@@ -1,18 +1,80 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     Calendar,
     Users,
     TrendingUp,
     Plus,
     AlertTriangle,
-    MoreVertical,
     Trash2,
-    Edit,
-    ClipboardList
+    ChevronRight,
+    ClipboardList,
+    Loader2
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import OrganizerSidebar from '../components/layout/OrganizerSidebar';
+
+const StatCard = ({ title, value, icon: Icon, colorClass }) => (
+    <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
+        <div className="flex items-center justify-between">
+            <div>
+                <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
+                <p className="text-2xl font-bold text-gray-900">{value}</p>
+            </div>
+            <div className={`p-3 rounded-lg ${colorClass}`}>
+                <Icon size={24} />
+            </div>
+        </div>
+    </div>
+);
+
+const EventRow = ({ event, onDelete }) => {
+    const navigate = useNavigate();
+
+    const getStatusStyle = (status) => {
+        switch (status) {
+            case 'open_call': return 'bg-green-100 text-green-700';
+            case 'draft': return 'bg-gray-100 text-gray-700';
+            case 'completed': return 'bg-blue-100 text-blue-700';
+            case 'ongoing': return 'bg-purple-100 text-purple-700';
+            case 'program_ready': return 'bg-blue-100 text-blue-700';
+            default: return 'bg-yellow-100 text-yellow-700';
+        }
+    };
+
+    return (
+        <tr className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 group">
+            <td className="py-4 px-4 font-semibold text-gray-900">{event.title}</td>
+            <td className="py-4 px-4">
+                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusStyle(event.status)}`}>
+                    {event.status.replace('_', ' ')}
+                </span>
+            </td>
+            <td className="py-4 px-4 text-sm text-gray-600">
+                {new Date(event.start_date).toLocaleDateString()}
+            </td>
+            <td className="py-4 px-4 text-center font-bold text-gray-700">
+                {event.real_participants_count || 0}
+            </td>
+            <td className="py-4 px-4 text-right">
+                <div className="flex items-center justify-end gap-2">
+                    <button
+                        onClick={() => navigate(`/events/${event.id}/edit`)}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                        <ChevronRight size={18} />
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); onDelete(event.id); }}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                        <Trash2 size={18} />
+                    </button>
+                </div>
+            </td>
+        </tr>
+    );
+};
 
 const DashboardOrganizer = () => {
     const [loading, setLoading] = useState(true);
@@ -24,187 +86,155 @@ const DashboardOrganizer = () => {
     });
     const [recentEvents, setRecentEvents] = useState([]);
     const [userInfo, setUserInfo] = useState(null);
-    const [activeMenu, setActiveMenu] = useState(null);
     const navigate = useNavigate();
-    const menuRef = useRef(null);
 
     useEffect(() => {
         fetchOrganizerData();
-
-        // Close menu when clicking outside
-        function handleClickOutside(event) {
-            if (menuRef.current && !menuRef.current.contains(event.target)) {
-                setActiveMenu(null);
-            }
-        }
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => {
-            document.removeEventListener("mousedown", handleClickOutside);
-        };
     }, []);
 
     const fetchOrganizerData = async () => {
         try {
             setLoading(true);
-            const [profileRes, dashboardRes, myEventsRes] = await Promise.all([
+            const [profileRes, myEventsRes] = await Promise.all([
                 api.get('/api/auth/profile/'),
-                api.get('/api/dashboard/'),
-                api.get('/api/events/my-events/') // Fetch all events for accurate stats
+                api.get('/api/events/my-events/')
             ]);
 
             setUserInfo(profileRes.data);
-
-            // Handle potentially paginated response for events
             const eventsData = myEventsRes.data;
-            const allEvents = Array.isArray(eventsData) ? eventsData : (eventsData.results || []);
+            let allEvents = Array.isArray(eventsData) ? eventsData : (eventsData.results || []);
 
-            // Calculate stats from ALL events
-            const totalEvents = allEvents.length;
-            const activeEvents = allEvents.filter(e => e.status === 'open_call' || e.status === 'ongoing').length;
+            // Since the backend list view doesn't provide participants count, 
+            // we fetch registrations for each event to calculate real stats.
+            const participantsPromises = allEvents.map(e => api.get(`/api/events/${e.id}/registrations/`));
+            const participantsResponses = await Promise.all(participantsPromises);
 
-            // Calculate total participants across all events
-            const totalParticipants = allEvents.reduce((acc, curr) => acc + (curr.participants_count || 0), 0);
-
-            setStats({
-                totalEvents: totalEvents,
-                activeEvents: activeEvents,
-                totalParticipants: totalParticipants,
-                pendingApprovals: 12 // Placeholder or fetch if available
+            let totalParticipantsCount = 0;
+            allEvents = allEvents.map((event, index) => {
+                const regs = Array.isArray(participantsResponses[index].data)
+                    ? participantsResponses[index].data
+                    : (participantsResponses[index].data.results || []);
+                const count = regs.length;
+                totalParticipantsCount += count;
+                return { ...event, real_participants_count: count };
             });
 
-            // Set recent events (first 5 of the full list)
-            setRecentEvents(allEvents.slice(0, 5));
+            const totalEvents = allEvents.length;
+            const activeEvents = allEvents.filter(e => e.status === 'open_call' || e.status === 'ongoing' || e.status === 'program_ready').length;
 
+            setStats({
+                totalEvents,
+                activeEvents,
+                totalParticipants: totalParticipantsCount,
+                pendingApprovals: 8 // Placeholder
+            });
+            setRecentEvents(allEvents.slice(0, 5));
         } catch (error) {
-            console.error("Error fetching organizer data:", error);
-            if (error.response?.status === 401) {
-                navigate('/login');
-            }
+            console.error("Error fetching data:", error);
+            if (error.response?.status === 401) navigate('/login');
         } finally {
             setLoading(false);
         }
     };
 
-    const handleDelete = async (eventId, e) => {
-        e.stopPropagation();
-        if (window.confirm("Are you sure you want to delete this event? This action cannot be undone.")) {
+    const handleDelete = async (eventId) => {
+        if (window.confirm("Are you sure you want to delete this event?")) {
             try {
                 await api.delete(`/api/events/${eventId}/`);
                 setRecentEvents(prev => prev.filter(event => event.id !== eventId));
                 setStats(prev => ({ ...prev, totalEvents: prev.totalEvents - 1 }));
-                setActiveMenu(null);
             } catch (error) {
-                console.error("Error deleting event:", error);
-                alert("Failed to delete event.");
+                console.error("Delete error:", error);
             }
         }
     };
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-[#0a0a0a] text-white">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
-            </div>
+            <OrganizerSidebar userInfo={userInfo}>
+                <div className="flex h-screen items-center justify-center">
+                    <Loader2 className="w-8 h-8 text-blue-500 animate-spin" />
+                </div>
+            </OrganizerSidebar>
         );
     }
 
     return (
         <OrganizerSidebar userInfo={userInfo}>
-            {/* Title & Action */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+            <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-bold text-white">Organizer Dashboard</h1>
-                    <p className="text-gray-400">Manage your scientific events and review performance</p>
+                    <h1 className="text-2xl font-bold text-gray-900">Organizer Dashboard</h1>
+                    <p className="text-gray-500">Manage your events, sessions and participants.</p>
                 </div>
-                <button
-                    onClick={() => navigate('/events/create')}
-                    className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2.5 rounded-xl font-medium shadow-lg shadow-blue-600/20 active:scale-95 transition-all"
-                >
-                    <Plus size={18} /> Create New Event
-                </button>
+                <div className="flex gap-3">
+                    <button
+                        onClick={() => navigate('/events/create')}
+                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2.5 rounded-lg font-bold hover:bg-blue-700 transition-colors shadow-lg shadow-blue-600/20"
+                    >
+                        <Plus size={18} /> New Event
+                    </button>
+                    <button
+                        onClick={() => navigate('/sessions/create')}
+                        className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm"
+                    >
+                        <ClipboardList size={18} /> Mix Session
+                    </button>
+                </div>
             </div>
 
-            {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-                <StatCard title="Total Events" value={stats.totalEvents} icon={Calendar} color="bg-blue-500" />
-                <StatCard title="Active Events" value={stats.activeEvents} icon={TrendingUp} color="bg-green-500" />
-                <StatCard title="Participants" value={stats.totalParticipants} icon={Users} color="bg-purple-500" />
-                <StatCard title="Pending Approval" value={stats.pendingApprovals} icon={AlertTriangle} color="bg-orange-500" />
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <StatCard
+                    title="Total Events"
+                    value={stats.totalEvents}
+                    icon={Calendar}
+                    colorClass="bg-blue-50 text-blue-600"
+                />
+                <StatCard
+                    title="Active Calls"
+                    value={stats.activeEvents}
+                    icon={TrendingUp}
+                    colorClass="bg-green-50 text-green-600"
+                />
+                <StatCard
+                    title="Total Participants"
+                    value={stats.totalParticipants}
+                    icon={Users}
+                    colorClass="bg-purple-50 text-purple-600"
+                />
+                <StatCard
+                    title="Pending Reviews"
+                    value={stats.pendingApprovals}
+                    icon={AlertTriangle}
+                    colorClass="bg-orange-50 text-orange-600"
+                />
             </div>
 
-            {/* Recent Events Table */}
-            <div className="bg-[#1a1a2e] border border-gray-800 rounded-2xl p-6 shadow-sm mb-8" ref={menuRef}>
-                <div className="flex items-center justify-between mb-6">
-                    <h3 className="text-xl font-semibold text-white">Recent Events</h3>
-                    <Link to="/events/my-events" className="text-blue-400 hover:text-blue-300 text-sm">View All</Link>
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+                    <h3 className="font-bold text-gray-900">Recent Events</h3>
+                    <Link to="/events" className="text-sm font-semibold text-blue-600 hover:underline">View All</Link>
                 </div>
-
                 <div className="overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="text-gray-400 border-b border-gray-800">
-                                <th className="py-3 px-4 font-medium">Event Name</th>
-                                <th className="py-3 px-4 font-medium">Date</th>
-                                <th className="py-3 px-4 font-medium">Status</th>
-                                <th className="py-3 px-4 font-medium">Participants</th>
-                                <th className="py-3 px-4 font-medium text-right">Actions</th>
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 text-gray-500 text-[11px] font-black uppercase tracking-wider border-b border-gray-100">
+                            <tr>
+                                <th className="py-3 px-4">Event Title</th>
+                                <th className="py-3 px-4">Status</th>
+                                <th className="py-3 px-4">Start Date</th>
+                                <th className="py-3 px-4 text-center">Participants</th>
+                                <th className="py-3 px-4 text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {recentEvents.length > 0 ? (
                                 recentEvents.map(event => (
-                                    <tr key={event.id} className="border-b border-gray-800/50 hover:bg-gray-800/30 transition-colors">
-                                        <td className="py-4 px-4 font-medium text-white">{event.title}</td>
-                                        <td className="py-4 px-4 text-gray-400">
-                                            {new Date(event.start_date).toLocaleDateString()}
-                                        </td>
-                                        <td className="py-4 px-4">
-                                            <span className={`px-2 py-1 rounded-full text-xs font-medium border ${getStatusStyle(event.status)}`}>
-                                                {event.status?.replace('_', ' ').toUpperCase() || 'UNKNOWN'}
-                                            </span>
-                                        </td>
-                                        <td className="py-4 px-4 text-gray-300">{event.participants_count || 0}</td>
-                                        <td className="py-4 px-4 text-right relative">
-                                            <button
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    setActiveMenu(activeMenu === event.id ? null : event.id);
-                                                }}
-                                                className="text-gray-400 hover:text-white p-2 hover:bg-white/5 rounded-lg transition-colors"
-                                            >
-                                                <MoreVertical size={18} />
-                                            </button>
-
-                                            {activeMenu === event.id && (
-                                                <div className="absolute right-0 mt-2 w-48 bg-[#1f1f35] border border-gray-700 rounded-xl shadow-2xl z-50 overflow-hidden">
-                                                    <button
-                                                        onClick={() => navigate(`/events/${event.id}/edit`)}
-                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-blue-600 hover:text-white transition-colors text-left"
-                                                    >
-                                                        <Edit size={16} /> Update
-                                                    </button>
-                                                    <button
-                                                        onClick={() => navigate(`/events/${event.id}/submissions`)}
-                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-gray-300 hover:bg-blue-600 hover:text-white transition-colors text-left"
-                                                    >
-                                                        <ClipboardList size={16} /> Pending Approval
-                                                    </button>
-                                                    <div className="h-px bg-gray-700 mx-2 my-1"></div>
-                                                    <button
-                                                        onClick={(e) => handleDelete(event.id, e)}
-                                                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-400 hover:bg-red-500/20 hover:text-red-300 transition-colors text-left"
-                                                    >
-                                                        <Trash2 size={16} /> Delete
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </td>
-                                    </tr>
+                                    <EventRow key={event.id} event={event} onDelete={handleDelete} />
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan="5" className="py-8 text-center text-gray-500">
-                                        No events created yet. Start by creating your first event!
+                                    <td colSpan="5" className="py-12 text-center text-gray-400">
+                                        No events found.
                                     </td>
                                 </tr>
                             )}
@@ -214,30 +244,6 @@ const DashboardOrganizer = () => {
             </div>
         </OrganizerSidebar>
     );
-};
-
-const StatCard = ({ title, value, icon: Icon, color }) => (
-    <div className="bg-[#1a1a2e] border border-gray-800 p-5 rounded-2xl">
-        <div className="flex justify-between items-start">
-            <div>
-                <p className="text-gray-400 text-sm font-medium">{title}</p>
-                <h3 className="text-3xl font-bold text-white mt-1">{value}</h3>
-            </div>
-            <div className={`p-3 rounded-xl ${color} bg-opacity-10`}>
-                <Icon size={24} className={color.replace('bg-', 'text-')} />
-            </div>
-        </div>
-    </div>
-);
-
-const getStatusStyle = (status) => {
-    switch (status) {
-        case 'ongoing':
-        case 'open_call': return 'bg-green-500/10 text-green-400 border-green-500/20';
-        case 'draft': return 'bg-gray-500/10 text-gray-400 border-gray-500/20';
-        case 'completed': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-        default: return 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20';
-    }
 };
 
 export default DashboardOrganizer;
