@@ -215,7 +215,6 @@ export default function HomePage() {
           </div>
           <div className="flex gap-4">
             <button className="hero-cta-button">EXPLORE EVENTS</button>
-            <a href="/dashboard" className="hero-cta-button bg-indigo-600 hover:bg-indigo-700 border-none">DASHBOARD</a>
           </div>
         </div>
       </section>

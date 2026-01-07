@@ -17,6 +17,7 @@ import Workshops from "./pages/workshops/Workshops";
 import Profile from "./pages/profile/Profile";
 import Settings from "./pages/settings/Settings";
 import Dashboard from "./pages/Dashboard";
+import Notifications from "./pages/Notifications";
 import "./styles/global.css";
 
 function Logout() {
@@ -35,6 +36,11 @@ import OrganizerParticipants from "./pages/organizer/OrganizerParticipants";
 import OrganizerSubmissions from "./pages/organizer/OrganizerSubmissions";
 import EditEvent from "./pages/EditEvent";
 import EventSubmissions from "./pages/EventSubmissions";
+import CreateSession from "./pages/CreateSession";
+import EventDetails from "./pages/EventDetails";
+import SessionsList from "./pages/SessionsList";
+import DashboardAuthor from "./pages/DashboardAuthor";
+import NewSubmission from "./pages/NewSubmission";
 
 function App() {
     return (
@@ -47,25 +53,31 @@ function App() {
                 <Route path="*" element={<NotFound />} />
 
                 {/* Dashboard Routes */}
-                <Route path="/dashboard" element={<ProtectedRoutes><Layout><Dashboard /></Layout></ProtectedRoutes>} />
+                <Route path="/dashboard" element={<ProtectedRoutes><Dashboard /></ProtectedRoutes>} />
+                <Route path="/dashboard-author" element={<ProtectedRoutes><DashboardAuthor /></ProtectedRoutes>} />
+                <Route path="/submissions/new" element={<ProtectedRoutes><NewSubmission /></ProtectedRoutes>} />
 
                 {/* Oganizer Routes - Using Custom Layout (OrganizerSidebar) inside the components */}
                 <Route path="/dashboard-organizer" element={<ProtectedRoutes><DashboardOrganizer /></ProtectedRoutes>} />
                 <Route path="/events/my-events" element={<ProtectedRoutes><OrganizerEvents /></ProtectedRoutes>} />
+                <Route path="/organizer/sessions" element={<ProtectedRoutes><SessionsList /></ProtectedRoutes>} />
                 <Route path="/organizer/participants" element={<ProtectedRoutes><OrganizerParticipants /></ProtectedRoutes>} />
                 <Route path="/organizer/submissions" element={<ProtectedRoutes><OrganizerSubmissions /></ProtectedRoutes>} />
 
                 <Route path="/events" element={<ProtectedRoutes><Layout><Events /></Layout></ProtectedRoutes>} />
-                <Route path="/events/create" element={<ProtectedRoutes><Layout><CreateEvent /></Layout></ProtectedRoutes>} />
-                <Route path="/events/:id/edit" element={<ProtectedRoutes><Layout><EditEvent /></Layout></ProtectedRoutes>} />
+                <Route path="/events/:id" element={<ProtectedRoutes><Layout><EventDetails /></Layout></ProtectedRoutes>} />
+                <Route path="/events/create" element={<ProtectedRoutes><CreateEvent /></ProtectedRoutes>} />
+                <Route path="/events/:id/edit" element={<ProtectedRoutes><EditEvent /></ProtectedRoutes>} />
                 <Route path="/events/:id/submissions" element={<ProtectedRoutes><EventSubmissions /></ProtectedRoutes>} />
-                <Route path="/users" element={<ProtectedRoutes><Layout><Users /></Layout></ProtectedRoutes>} />
-                <Route path="/submissions" element={<ProtectedRoutes><Layout><Submissions /></Layout></ProtectedRoutes>} />
+                <Route path="/sessions/create" element={<ProtectedRoutes><CreateSession /></ProtectedRoutes>} />
+                <Route path="/users" element={<ProtectedRoutes><Users /></ProtectedRoutes>} />
+                <Route path="/submissions" element={<ProtectedRoutes><Submissions /></ProtectedRoutes>} />
                 <Route path="/workshops" element={<ProtectedRoutes><Layout><Workshops /></Layout></ProtectedRoutes>} />
                 <Route path="/about" element={<ProtectedRoutes><Layout><About /></Layout></ProtectedRoutes>} />
                 <Route path="/contact" element={<ProtectedRoutes><Layout><Contact /></Layout></ProtectedRoutes>} />
                 <Route path="/profile" element={<ProtectedRoutes><Layout><Profile /></Layout></ProtectedRoutes>} />
                 <Route path="/settings" element={<ProtectedRoutes><Layout><Settings /></Layout></ProtectedRoutes>} />
+                <Route path="/notifications" element={<ProtectedRoutes><Layout><Notifications /></Layout></ProtectedRoutes>} />
             </Routes>
         </Router>
     );

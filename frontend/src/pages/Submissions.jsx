@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import api from '../api';
-import { FileText, Calendar, CheckCircle, XCircle, Clock, AlertCircle } from 'lucide-react';
+import { FileText, Calendar, CheckCircle, XCircle, Clock, AlertCircle, Search, ChevronRight } from 'lucide-react';
+import AuthorSidebar from '../components/layout/AuthorSidebar';
+import { useNavigate } from 'react-router-dom';
 
 const Submissions = () => {
     const [submissions, setSubmissions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [userInfo, setUserInfo] = useState(null);
+    const navigate = useNavigate();
 
     useEffect(() => {
         fetchSubmissions();
@@ -13,106 +17,114 @@ const Submissions = () => {
 
     const fetchSubmissions = async () => {
         try {
-            // Using my-submissions endpoint as it is safe for all logged-in users
-            const response = await api.get('/api/submissions/my-submissions/');
-            setSubmissions(response.data);
+            setLoading(true);
+            const [profileRes, submissionsRes] = await Promise.all([
+                api.get('/api/auth/profile/'),
+                api.get('/api/submissions/my-submissions/')
+            ]);
+            setUserInfo(profileRes.data);
+            setSubmissions(submissionsRes.data);
         } catch (err) {
             console.error("Error fetching submissions:", err);
-            setError("Failed to load submissions.");
+            setError("Failed to load your submissions.");
         } finally {
             setLoading(false);
         }
     };
 
-    const getStatusConfig = (status) => {
+    const getStatusStyle = (status) => {
         switch (status) {
-            case 'accepted': return { color: 'text-green-400 border-green-500/20 bg-green-500/10', icon: CheckCircle };
-            case 'rejected': return { color: 'text-red-400 border-red-500/20 bg-red-500/10', icon: XCircle };
-            case 'pending': return { color: 'text-yellow-400 border-yellow-500/20 bg-yellow-500/10', icon: Clock };
-            case 'under_review': return { color: 'text-blue-400 border-blue-500/20 bg-blue-500/10', icon: FileText };
-            case 'revision_requested': return { color: 'text-orange-400 border-orange-500/20 bg-orange-500/10', icon: AlertCircle };
-            default: return { color: 'text-gray-400 border-gray-500/20 bg-gray-500/10', icon: FileText };
+            case 'accepted': return 'bg-green-50 text-green-700 border-green-100';
+            case 'rejected': return 'bg-red-50 text-red-700 border-red-100';
+            case 'pending': return 'bg-yellow-50 text-yellow-700 border-yellow-100';
+            case 'under_review': return 'bg-blue-50 text-blue-700 border-blue-100';
+            case 'revision_requested': return 'bg-orange-50 text-orange-700 border-orange-100';
+            default: return 'bg-gray-50 text-gray-700 border-gray-100';
         }
     };
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center p-20">
-                <div className="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+            <div className="flex h-screen items-center justify-center bg-gray-50">
+                <div className="w-10 h-10 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-[#0a0a0a] text-white p-6 lg:p-10 pb-20">
-            <div className="max-w-5xl mx-auto">
-                <div className="flex justify-between items-center mb-8">
-                    <div>
-                        <h1 className="text-3xl font-black mb-2">My Submissions</h1>
-                        <p className="text-gray-400">Track the status of your scientific papers</p>
-                    </div>
-                </div>
-
-                {error && (
-                    <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-6 rounded-2xl mb-8 text-center font-bold">
-                        {error}
-                    </div>
-                )}
-
-                <div className="space-y-4">
-                    {Array.isArray(submissions) && submissions.map((submission) => {
-                        const statusConfig = getStatusConfig(submission.status);
-                        const StatusIcon = statusConfig.icon;
-
-                        return (
-                            <div key={submission.id} className="bg-[#111111] border border-white/5 rounded-2xl p-6 hover:border-indigo-500/30 transition-all">
-                                <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-                                    <div className="flex-1">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border flex items-center gap-2 ${statusConfig.color}`}>
-                                                <StatusIcon size={12} />
-                                                {submission.status?.replace('_', ' ')}
-                                            </span>
-                                            <span className="text-gray-500 text-xs font-bold uppercase tracking-wider">
-                                                {submission.submission_type}
-                                            </span>
-                                        </div>
-
-                                        <h3 className="text-xl font-bold text-white mb-2">{submission.title}</h3>
-                                        <p className="text-gray-400 text-sm line-clamp-2 mb-4">{submission.abstract}</p>
-
-                                        <div className="flex items-center gap-4 text-xs text-gray-500 font-medium">
-                                            <span className="flex items-center gap-1">
-                                                <Calendar size={14} /> Submitted: {new Date(submission.submitted_at).toLocaleDateString()}
-                                            </span>
-                                            {/* We could add more specific info here if available in serializer */}
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-2">
-                                        <button className="px-4 py-2 bg-white/5 hover:bg-white/10 rounded-lg text-sm font-bold border border-white/10 transition-colors">
-                                            View Details
-                                        </button>
-                                        {/* Add specific actions based on status later */}
-                                    </div>
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-
-                {!loading && submissions.length === 0 && !error && (
-                    <div className="text-center py-20 border border-white/5 rounded-3xl border-dashed bg-[#111111]/50">
-                        <FileText className="w-16 h-16 text-gray-700 mx-auto mb-4" />
-                        <h3 className="text-xl font-bold text-gray-500">No submissions yet</h3>
-                        <p className="text-gray-600 mb-6">You haven't submitted any papers to events yet.</p>
-                        <button className="px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm transition-all">
-                            Browse Events to Submit
-                        </button>
-                    </div>
-                )}
+        <AuthorSidebar userInfo={userInfo}>
+            <div className="mb-8">
+                <h1 className="text-2xl font-bold text-gray-900">My Submissions</h1>
+                <p className="text-gray-500">Track and manage your scientific contributions.</p>
             </div>
-        </div>
+
+            {error && (
+                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 flex items-center gap-3">
+                    <AlertCircle size={20} />
+                    <span className="font-medium">{error}</span>
+                </div>
+            )}
+
+            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden text-right">
+                <table className="w-full text-left">
+                    <thead className="bg-gray-50 text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-gray-100">
+                        <tr>
+                            <th className="py-4 px-6">Submission Title</th>
+                            <th className="py-4 px-6">Status</th>
+                            <th className="py-4 px-6 text-center">Type</th>
+                            <th className="py-4 px-6">Submitted Date</th>
+                            <th className="py-4 px-6 text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                        {submissions.length > 0 ? (
+                            submissions.map((submission) => (
+                                <tr key={submission.id} className="hover:bg-gray-50/50 transition-colors group">
+                                    <td className="py-5 px-6">
+                                        <div className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{submission.title}</div>
+                                        <div className="text-xs text-blue-5100 font-semibold mt-1">Paper ID: #{submission.id}</div>
+                                    </td>
+                                    <td className="py-5 px-6">
+                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusStyle(submission.status)}`}>
+                                            {submission.status?.replace('_', ' ')}
+                                        </span>
+                                    </td>
+                                    <td className="py-5 px-6 text-center">
+                                        <span className="text-xs font-bold text-gray-500 bg-gray-100 px-2 py-0.5 rounded uppercase tracking-tighter">
+                                            {submission.submission_type}
+                                        </span>
+                                    </td>
+                                    <td className="py-5 px-6 text-sm text-gray-500">
+                                        {new Date(submission.submitted_at).toLocaleDateString()}
+                                    </td>
+                                    <td className="py-5 px-6 text-right">
+                                        <button
+                                            onClick={() => navigate(`/submissions/new`)} // Or details if we had details page
+                                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 bg-white border border-gray-100 rounded-lg transition-all"
+                                        >
+                                            <ChevronRight size={18} />
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))
+                        ) : (
+                            <tr>
+                                <td colSpan="5" className="py-20 text-center">
+                                    <FileText className="w-12 h-12 text-gray-200 mx-auto mb-4" />
+                                    <p className="text-gray-400 font-medium">You haven't submitted any papers yet.</p>
+                                    <button
+                                        onClick={() => navigate('/events')}
+                                        className="mt-4 text-blue-600 font-bold hover:underline"
+                                    >
+                                        Find an event to submit
+                                    </button>
+                                </td>
+                            </tr>
+                        )}
+                    </tbody>
+                </table>
+            </div>
+        </AuthorSidebar>
     );
 };
 
