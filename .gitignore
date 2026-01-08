@@ -1,5 +1,6 @@
 *.pyc
 __pycache__/
+_pycache/
 db.sqlite3
 
 # Django migrations
