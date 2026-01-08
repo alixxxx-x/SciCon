@@ -97,6 +97,7 @@ const NewSubmission = () => {
         setError(null);
 
         const data = new FormData();
+        data.append('event', formData.event); // Required by backend serializer
         data.append('title', formData.title);
         data.append('abstract', formData.abstract);
         data.append('keywords', formData.keywords);
@@ -119,7 +120,21 @@ const NewSubmission = () => {
             }, 2000);
         } catch (err) {
             console.error("Submission error:", err);
-            setError(err.response?.data?.detail || "Failed to submit. Please check all fields.");
+            // Construct a meaningful error message from backend validation errors
+            let errorMessage = "Failed to submit. Please check all fields.";
+            if (err.response?.data) {
+                const data = err.response.data;
+                if (data.detail) {
+                    errorMessage = data.detail;
+                } else {
+                    // Combine all field errors into a single string
+                    const fieldErrors = Object.entries(data)
+                        .map(([key, errors]) => `${key}: ${Array.isArray(errors) ? errors.join(' ') : errors}`)
+                        .join(' | ');
+                    if (fieldErrors) errorMessage = fieldErrors;
+                }
+            }
+            setError(errorMessage);
         } finally {
             setSubmitting(false);
         }
@@ -276,7 +291,6 @@ const NewSubmission = () => {
                                                 onChange={handleFileChange}
                                                 accept=".pdf,.doc,.docx"
                                                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                                                required
                                             />
                                             <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center group-hover:border-blue-400 transition-colors">
                                                 <Upload className="mx-auto text-gray-400 mb-2 group-hover:text-blue-500" size={24} />

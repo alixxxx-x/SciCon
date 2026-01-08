@@ -31,7 +31,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsSuperAdmin]
+    permission_classes = [IsSuperAdmin | IsOrganizer]
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['username', 'email', 'institution']
     ordering_fields = ['created_at', 'username']

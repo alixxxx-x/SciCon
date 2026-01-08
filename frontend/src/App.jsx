@@ -40,7 +40,10 @@ import CreateSession from "./pages/CreateSession";
 import EventDetails from "./pages/EventDetails";
 import SessionsList from "./pages/SessionsList";
 import DashboardAuthor from "./pages/DashboardAuthor";
+import DashboardParticipant from "./pages/DashboardParticipant";
+import DashboardReviewer from "./pages/DashboardReviewer";
 import NewSubmission from "./pages/NewSubmission";
+import AssignReviewers from "./pages/organizer/AssignReviewers";
 
 function App() {
     return (
@@ -54,6 +57,8 @@ function App() {
 
                 {/* Dashboard Routes */}
                 <Route path="/dashboard" element={<ProtectedRoutes><Dashboard /></ProtectedRoutes>} />
+                <Route path="/dashboard-participant" element={<ProtectedRoutes><DashboardParticipant /></ProtectedRoutes>} />
+                <Route path="/dashboard-reviewer" element={<ProtectedRoutes><DashboardReviewer /></ProtectedRoutes>} />
                 <Route path="/dashboard-author" element={<ProtectedRoutes><DashboardAuthor /></ProtectedRoutes>} />
                 <Route path="/submissions/new" element={<ProtectedRoutes><NewSubmission /></ProtectedRoutes>} />
 
@@ -63,6 +68,7 @@ function App() {
                 <Route path="/organizer/sessions" element={<ProtectedRoutes><SessionsList /></ProtectedRoutes>} />
                 <Route path="/organizer/participants" element={<ProtectedRoutes><OrganizerParticipants /></ProtectedRoutes>} />
                 <Route path="/organizer/submissions" element={<ProtectedRoutes><OrganizerSubmissions /></ProtectedRoutes>} />
+                <Route path="/organizer/assign-reviewers" element={<ProtectedRoutes><AssignReviewers /></ProtectedRoutes>} />
 
                 <Route path="/events" element={<ProtectedRoutes><Layout><Events /></Layout></ProtectedRoutes>} />
                 <Route path="/events/:id" element={<ProtectedRoutes><Layout><EventDetails /></Layout></ProtectedRoutes>} />

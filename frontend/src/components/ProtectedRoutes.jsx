@@ -5,55 +5,59 @@ import { REFRESH_TOKEN, ACCESS_TOKEN } from "../constants";
 import { useState, useEffect } from "react";
 
 function ProtectedRoutes({ children }) {
-    const [isAuthorized, setIsAuthorized] = useState(null);
+  const [isAuthorized, setIsAuthorized] = useState(null);
 
-    useEffect(() => { checkAuth().catch(() => setIsAuthorized(false)) }, [])
-
-    const refreshToken = async () => {
-        const refreshToken = localStorage.getItem(REFRESH_TOKEN);
-        try {
-            const response = await api.post("/api/auth/refresh/", { refresh: refreshToken });
-
-            if (response.status === 200) {
-                localStorage.setItem(ACCESS_TOKEN, response.data.access);
-                setIsAuthorized(true);
-            }
-            else {
-                setIsAuthorized(false);
-            }
-
-
-        } catch (error) {
-            console.error("Error refreshing token:", error);
-            setIsAuthorized(false);
-        }
-    }
+  useEffect(() => {
+    let isMounted = true; // prevents state update if unmounted
 
     const checkAuth = async () => {
+      try {
         const token = localStorage.getItem(ACCESS_TOKEN);
+
         if (!token) {
-            setIsAuthorized(false);
-            return;
+          if (isMounted) setIsAuthorized(false);
+          return;
         }
 
-        const decodedToken = jwtDecode(token);
-        const tokenExpiration = decodedToken.exp;
+        const decoded = jwtDecode(token);
         const currentTime = Date.now() / 1000;
 
-        if (tokenExpiration < currentTime) {
-            await refreshToken();
+        // token expired → try refresh
+        if (decoded.exp < currentTime) {
+          const refresh = localStorage.getItem(REFRESH_TOKEN);
+
+          if (!refresh) {
+            if (isMounted) setIsAuthorized(false);
+            return;
+          }
+
+          const response = await api.post("/api/auth/refresh/", {
+            refresh,
+          });
+
+          localStorage.setItem(ACCESS_TOKEN, response.data.access);
+          if (isMounted) setIsAuthorized(true);
         } else {
-            setIsAuthorized(true);
+          if (isMounted) setIsAuthorized(true);
         }
+      } catch (error) {
+        console.error("Auth error:", error);
+        if (isMounted) setIsAuthorized(false);
+      }
+    };
 
+    checkAuth();
 
-    }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
-    if (isAuthorized === null) {
-        return <div>loading...</div>
-    }
+  if (isAuthorized === null) {
+    return <div>Loading...</div>;
+  }
 
-    return isAuthorized ? children : <Navigate to="/login" />;
+  return isAuthorized ? children : <Navigate to="/login" />;
 }
 
 export default ProtectedRoutes;
