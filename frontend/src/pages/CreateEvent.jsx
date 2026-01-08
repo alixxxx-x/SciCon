@@ -192,9 +192,15 @@ const CreateEvent = () => {
                                     <input name="end_date" type="date" required value={formData.end_date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500" />
                                 </div>
                             </div>
-                            <div>
-                                <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Submission Deadline</label>
-                                <input name="submission_deadline" type="datetime-local" required value={formData.submission_deadline} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500" />
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Submission Deadline</label>
+                                    <input name="submission_deadline" type="datetime-local" required value={formData.submission_deadline} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500" />
+                                </div>
+                                <div>
+                                    <label className="block text-[10px] font-bold text-gray-400 uppercase mb-2">Notification Date</label>
+                                    <input name="notification_date" type="date" required value={formData.notification_date} onChange={handleChange} className="w-full bg-gray-50 border border-gray-200 rounded-lg p-2.5 outline-none focus:border-blue-500" />
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -16,7 +16,7 @@ urlpatterns = [
     path('dashboard/', dashboard, name='dashboard'),
     
     # Events
-    path('events/', EventListCreateView.as_view(), name='events'),#[IsAuthenticated]
+    path('events/', EventListCreateView.as_view(), name='events'),#[IsAuthenticated] 
     path('events/<int:pk>/', EventDetailView.as_view(), name='event_detail'),#[IsAuthenticated, IsEventOrganizer]
     path('events/my-events/', MyEventsView.as_view(), name='my_events'),#[IsAuthenticated]
     path('events/<int:event_id>/statistics/', event_statistics, name='event_stats'),

@@ -2,15 +2,13 @@ import React, { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
     LayoutDashboard,
+    FileText,
+    Award,
     Calendar,
-    PlusCircle,
-    List,
     Settings,
     LogOut,
     Menu,
     X,
-    Users,
-    UserCheck
 } from 'lucide-react';
 
 const SidebarItem = ({ icon: Icon, label, to, open }) => {
@@ -21,8 +19,8 @@ const SidebarItem = ({ icon: Icon, label, to, open }) => {
         <Link
             to={to}
             className={`flex items-center w-full p-3 rounded-lg transition-colors ${active
-                ? 'bg-blue-600 text-white shadow-sm'
-                : 'text-gray-400 hover:bg-slate-800 hover:text-white'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                 }`}
         >
             <Icon size={20} />
@@ -31,7 +29,7 @@ const SidebarItem = ({ icon: Icon, label, to, open }) => {
     );
 };
 
-const OrganizerSidebar = ({ children, userInfo }) => {
+const ParticipantSidebar = ({ children, userInfo }) => {
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const navigate = useNavigate();
 
@@ -58,12 +56,10 @@ const OrganizerSidebar = ({ children, userInfo }) => {
                 </div>
 
                 <nav className="flex-1 mt-6 px-4 space-y-1">
-                    <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard-organizer" open={sidebarOpen} />
-                    <SidebarItem icon={Calendar} label="My Events" to="/events/my-events" open={sidebarOpen} />
-                    <SidebarItem icon={PlusCircle} label="Create Event" to="/events/create" open={sidebarOpen} />
-                    <SidebarItem icon={List} label="All Sessions" to="/organizer/sessions" open={sidebarOpen} />
-                    <SidebarItem icon={UserCheck} label="Assign Reviewers" to="/organizer/assign-reviewers" open={sidebarOpen} />
-                    <SidebarItem icon={Users} label="Participants" to="/organizer/participants" open={sidebarOpen} />
+                    <SidebarItem icon={LayoutDashboard} label="Dashboard" to="/dashboard-participant" open={sidebarOpen} />
+                    <SidebarItem icon={FileText} label="My Registrations" to="/events" open={sidebarOpen} />
+                    <SidebarItem icon={Award} label="Certificates" to="/profile" open={sidebarOpen} />
+                    <SidebarItem icon={Calendar} label="Browse Events" to="/events" open={sidebarOpen} />
                     <SidebarItem icon={Settings} label="Settings" to="/settings" open={sidebarOpen} />
                 </nav>
 
@@ -79,7 +75,7 @@ const OrganizerSidebar = ({ children, userInfo }) => {
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 flex flex-col overflow-hidden bg-gray-50">
+            <main className="flex-1 flex flex-col overflow-hidden bg-gray-50 uppercase-none">
                 {/* Header */}
                 <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-6 shadow-sm">
                     <button
@@ -93,13 +89,13 @@ const OrganizerSidebar = ({ children, userInfo }) => {
                             <p className="text-sm font-semibold text-gray-900">
                                 {userInfo?.first_name ? `${userInfo.first_name} ${userInfo.last_name}` : userInfo?.username}
                             </p>
-                            <p className="text-xs text-indigo-600 font-medium capitalize">Organizer Account</p>
+                            <p className="text-xs text-blue-600 font-medium capitalize">Participant Account</p>
                         </div>
-                        <div className="w-10 h-10 rounded-full bg-indigo-100 border border-indigo-200 flex items-center justify-center text-indigo-700 font-bold overflow-hidden shadow-inner">
+                        <div className="w-10 h-10 rounded-full bg-blue-100 border border-blue-200 flex items-center justify-center text-blue-700 font-bold overflow-hidden shadow-inner">
                             {userInfo?.photo ? (
                                 <img src={userInfo.photo} alt="Profile" className="w-full h-full object-cover" />
                             ) : (
-                                (userInfo?.username?.charAt(0) || 'O').toUpperCase()
+                                (userInfo?.username?.charAt(0) || 'P').toUpperCase()
                             )}
                         </div>
                     </div>
@@ -115,4 +111,4 @@ const OrganizerSidebar = ({ children, userInfo }) => {
     );
 };
 
-export default OrganizerSidebar;
+export default ParticipantSidebar;
