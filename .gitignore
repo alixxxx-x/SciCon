@@ -2,3 +2,6 @@
 __pycache__/
 db.sqlite3
 
+# Django migrations
+backend/api/migrations/*
+!backend/api/migrations/__init__.py
