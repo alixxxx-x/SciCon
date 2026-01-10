@@ -2,3 +2,30 @@
 __pycache__/
 db.sqlite3
 
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Dependencies
+node_modules/
+
+# Secrets
+.env
+.env.local
+
+# Editor folders
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Django media
+media/
+
+# Vite cache
+.vite/
+
