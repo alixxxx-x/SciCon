@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api";
+import api from "../../services/api";
 import { User, Mail, Building, Globe, Phone, FileText, Save, Loader2, Lock, Shield, Eye, EyeOff, CheckCircle2, AlertCircle } from "lucide-react";
 
 export default function Settings() {

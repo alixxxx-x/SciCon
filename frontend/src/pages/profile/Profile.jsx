@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api from "../../api";
+import api from "../../services/api";
 import { User, Mail, Building, Globe, Phone, FileText, ArrowLeft, Loader2, Shield, Calendar, Clock, Award } from "lucide-react";
 
 export default function Profile() {
