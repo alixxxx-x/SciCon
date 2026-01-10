@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import api from '../../api';
+import api from "../../services/api";
 import AuthorSidebar from './AuthorSidebar';
 import OrganizerSidebar from './OrganizerSidebar';
 import { Loader2 } from 'lucide-react';
