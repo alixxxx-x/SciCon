@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Menu, X, User, Bell, Settings, LogOut, ChevronDown, LayoutDashboard } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import "./layout.css";
+
 
 export default function Layout({ children }) {
   const [menuOpen, setMenuOpen] = useState(false);
