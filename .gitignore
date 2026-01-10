@@ -3,6 +3,60 @@ __pycache__/
 _pycache/
 db.sqlite3
 
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Dependencies
+node_modules/
+
+# Secrets
+.env
+.env.local
+
+# Editor folders
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Django media
+media/
+
+# Vite cache
+.vite/
+
+# Environments
+.venv/
+venv/
+ENV/
+env/
+
+# Dependencies
+node_modules/
+
+# Secrets
+.env
+.env.local
+
+# Editor folders
+.vscode/
+.idea/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Django media
+media/
+
+# Vite cache
+.vite/
+
 # Django migrations
 backend/api/migrations/*
 !backend/api/migrations/__init__.py
