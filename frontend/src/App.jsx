@@ -1,23 +1,37 @@
 import React from "react";
 import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-dom";
 import Home from "./pages/home/Home";
-import Register from "./pages/Register";
-import Login from "./pages/Login";
+import Register from "./features/auth/pages/RegisterPage";
+import Login from "./features/auth/pages/LoginPage";
 import NotFound from "./pages/NotFound";
-import ProtectedRoutes from "./components/ProtectedRoutes";
+import ProtectedRoutes from "./features/auth/components/ProtectedRoutes";
 import Layout from "./components/layout/Layout";
 import About from "./pages/about/About";
 import Contact from "./pages/contact/Contact";
-import DashboardOrganizer from "./pages/DashboardOrganizer";
-import Events from "./pages/events/Events";
-import CreateEvent from "./pages/CreateEvent";
-import Users from "./pages/Users";
-import Submissions from "./pages/Submissions";
+import DashboardOrganizer from "./features/dashboard/pages/OrganizerDashboard";
+import Events from "./features/events/pages/EventsPage";
+import CreateEvent from "./features/events/pages/CreateEventPage";
+import Users from "./features/users/pages/UsersPage";
+import Submissions from "./features/submissions/pages/SubmissionsPage";
 import Workshops from "./pages/workshops/Workshops";
 import Profile from "./pages/profile/Profile";
 import Settings from "./pages/settings/Settings";
-import Dashboard from "./pages/Dashboard";
+import Dashboard from "./features/dashboard/pages/DashboardPage";
 import Notifications from "./pages/Notifications";
+// Organizer Pages
+import OrganizerEvents from "./features/events/pages/OrganizerEventsPage";
+import OrganizerParticipants from "./features/users/pages/OrganizerParticipantsPage";
+import OrganizerSubmissions from "./features/submissions/pages/OrganizerSubmissionsPage";
+import EditEvent from "./features/events/pages/EditEventPage";
+import EventSubmissions from "./features/submissions/pages/EventSubmissionsPage";
+import CreateSession from "./features/events/pages/CreateSessionPage";
+import EventDetails from "./features/events/pages/EventDetailsPage";
+import SessionsList from "./features/events/pages/SessionsListPage";
+import DashboardAuthor from "./features/dashboard/pages/AuthorDashboard";
+import DashboardParticipant from "./features/dashboard/pages/ParticipantDashboard";
+import DashboardReviewer from "./features/dashboard/pages/ReviewerDashboard";
+import NewSubmission from "./features/submissions/pages/NewSubmissionPage";
+import AssignReviewers from "./features/submissions/pages/AssignReviewersPage";
 import "./styles/global.css";
 
 function Logout() {
@@ -30,20 +44,6 @@ function RegisterAndLogout() {
     return <Register />;
 }
 
-// Organizer Pages
-import OrganizerEvents from "./pages/organizer/OrganizerEvents";
-import OrganizerParticipants from "./pages/organizer/OrganizerParticipants";
-import OrganizerSubmissions from "./pages/organizer/OrganizerSubmissions";
-import EditEvent from "./pages/EditEvent";
-import EventSubmissions from "./pages/EventSubmissions";
-import CreateSession from "./pages/CreateSession";
-import EventDetails from "./pages/EventDetails";
-import SessionsList from "./pages/SessionsList";
-import DashboardAuthor from "./pages/DashboardAuthor";
-import DashboardParticipant from "./pages/DashboardParticipant";
-import DashboardReviewer from "./pages/DashboardReviewer";
-import NewSubmission from "./pages/NewSubmission";
-import AssignReviewers from "./pages/organizer/AssignReviewers";
 
 function App() {
     return (
