@@ -81,7 +81,7 @@ function RegisterForm({ route, method }) {
                             <div className="relative">
                                 <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
                                 <input
-                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
                                     type="text"
                                     name="username"
                                     value={formData.username}
@@ -97,7 +97,7 @@ function RegisterForm({ route, method }) {
                             <div className="relative">
                                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
                                 <input
-                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
                                     type="email"
                                     name="email"
                                     value={formData.email}
@@ -132,7 +132,7 @@ function RegisterForm({ route, method }) {
                             <div className="relative">
                                 <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
                                 <input
-                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
                                     type="text"
                                     name="institution"
                                     value={formData.institution}
@@ -147,7 +147,7 @@ function RegisterForm({ route, method }) {
                             <div className="relative">
                                 <Microscope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
                                 <input
-                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
                                     type="text"
                                     name="research_domain"
                                     value={formData.research_domain}
@@ -162,7 +162,7 @@ function RegisterForm({ route, method }) {
                             <div className="relative">
                                 <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
                                 <input
-                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
                                     type="text"
                                     name="country"
                                     value={formData.country}
@@ -177,7 +177,7 @@ function RegisterForm({ route, method }) {
                             <div className="relative">
                                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
                                 <input
-                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
                                     type="tel"
                                     name="phone"
                                     value={formData.phone}
@@ -209,7 +209,7 @@ function RegisterForm({ route, method }) {
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
                                 <input
-                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
                                     type="password"
                                     name="password"
                                     value={formData.password}
@@ -225,7 +225,7 @@ function RegisterForm({ route, method }) {
                             <div className="relative">
                                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
                                 <input
-                                    className="w-full bg-[#0a0a0a] border border-white/10 rounded-xl py-3 pl-10 pr-4 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
                                     type="password"
                                     name="confirmPassword"
                                     value={formData.confirmPassword}
