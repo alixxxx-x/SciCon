@@ -30,6 +30,10 @@ media/
 # Vite cache
 .vite/
 
+# Django migrations
+**/migrations/*.py
+!**/migrations/__init__.py
+
 # Environments
 .venv/
 venv/
