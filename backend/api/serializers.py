@@ -26,24 +26,32 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 class SessionSerializer(serializers.ModelSerializer):
     chair_name = serializers.CharField(source='chair.username', read_only=True)
+    submissions_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Session
         fields = '__all__'
         read_only_fields = ['created_at', 'event']
 
+    def get_submissions_count(self, obj):
+        return obj.submissions.count()
+
 
 class EventListSerializer(serializers.ModelSerializer):
     organizer_name = serializers.CharField(source='organizer.username', read_only=True)
     sessions_count = serializers.SerializerMethodField()
+    registrations_count = serializers.SerializerMethodField()
     
     class Meta:
         model = Event
         fields = ['id', 'title', 'event_type', 'theme', 'status', 'start_date', 
-                  'end_date', 'city', 'country', 'organizer_name', 'sessions_count']
+                  'end_date', 'city', 'country', 'organizer_name', 'sessions_count', 'registrations_count']
     
     def get_sessions_count(self, obj):
         return obj.sessions.count()
+
+    def get_registrations_count(self, obj):
+        return obj.registrations.count()
 
 
 class EventDetailSerializer(serializers.ModelSerializer):
@@ -107,6 +115,7 @@ class SubmissionSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
     reviews = ReviewSerializer(many=True, read_only=True)
     average_score = serializers.SerializerMethodField()
+    session_details = SessionSerializer(source='session', read_only=True)
     
     class Meta:
         model = Submission

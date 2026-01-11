@@ -1,27 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import {
-    UserCheck,
     Search,
-    Filter,
     ChevronRight,
     Users as UsersIcon,
     FileText,
-    CheckCircle2,
-    AlertCircle,
-    Loader2
+    RefreshCw,
+    Check,
+    Shield,
+    Zap,
+    ArrowLeft,
+    Filter
 } from 'lucide-react';
 import api from '../../../services/api';
 import OrganizerSidebar from '../../../components/layout/OrganizerSidebar';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const AssignReviewers = () => {
+    const { toast } = useToast();
     const [submissions, setSubmissions] = useState([]);
     const [reviewers, setReviewers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [userInfo, setUserInfo] = useState(null);
     const [selectedSubmission, setSelectedSubmission] = useState(null);
     const [selectedReviewers, setSelectedReviewers] = useState([]);
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(null);
     const [processing, setProcessing] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [manualId, setManualId] = useState('');
@@ -33,18 +38,15 @@ const AssignReviewers = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [profileRes, myEventsRes, allEventsRes] = await Promise.all([
+            const [profileRes, myEventsRes] = await Promise.all([
                 api.get('/api/auth/profile/'),
                 api.get('/api/events/my-events/'),
-                api.get('/api/events/').catch(() => ({ data: [] }))
             ]);
 
             setUserInfo(profileRes.data);
             const myEvents = Array.isArray(myEventsRes.data) ? myEventsRes.data : (myEventsRes.data.results || []);
-            const allPublicEvents = Array.isArray(allEventsRes.data) ? allEventsRes.data : (allEventsRes.data.results || []);
 
-            // 1. Fetch data for organizer's events
-            const subPromises = myEvents.map(event => api.get(`/api/events/${event.id}/submissions/`));
+            const subPromises = myEvents.map(event => api.get(`/api/events/${event.id}/submissions/`).catch(() => ({ data: [] })));
             const subsResponses = await Promise.all(subPromises);
             const allSubmissions = subsResponses.flatMap(res => {
                 const data = res.data;
@@ -52,60 +54,16 @@ const AssignReviewers = () => {
             });
             setSubmissions(allSubmissions);
 
-            // 2. PRIMARY REVIEWER FETCHING (Now possible thanks to UserListView permission update)
-            const allReviewersMap = {};
-
             try {
                 const usersRes = await api.get('/api/users/');
                 const globalUsers = Array.isArray(usersRes.data) ? usersRes.data : (usersRes.data.results || []);
-
-                // Direct filter for reviewers - this is the most reliable source now
-                globalUsers.forEach(u => {
-                    if (u.role === 'reviewer') {
-                        allReviewersMap[u.id] = u;
-                    }
-                });
-                console.log(`Discovered ${Object.keys(allReviewersMap).length} reviewers from global list.`);
+                setReviewers(globalUsers.filter(u => u.role === 'reviewer'));
             } catch (e) {
-                console.warn("Global listing access issue, falling back to association discovery.");
+                console.error("Error fetching reviewers:", e);
             }
-
-            // B. PROACTIVE ORPHAN POLLING
-            const detailPromises = allPublicEvents.map(event => api.get(`/api/events/${event.id}/`).catch(() => null));
-            const registrationPromises = allPublicEvents.map(event => api.get(`/api/events/${event.id}/registrations/`).catch(() => null));
-            const publicSubPromises = allPublicEvents.map(event => api.get(`/api/events/${event.id}/submissions/`).catch(() => null));
-
-            const [detailsRes, regsRes, pubSubsRes] = await Promise.all([
-                Promise.all(detailPromises),
-                Promise.all(registrationPromises),
-                Promise.all(publicSubPromises)
-            ]);
-
-            // Combine all user objects found in any public record
-            [...detailsRes, ...regsRes, ...pubSubsRes].forEach(res => {
-                if (!res?.data) return;
-                const data = res.data;
-
-                if (data.scientific_committee) {
-                    data.scientific_committee.forEach(u => { if (u.role === 'reviewer') allReviewersMap[u.id] = u; });
-                }
-
-                const list = Array.isArray(data) ? data : (data.results || []);
-                list.forEach(item => {
-                    const user = item.user || item.author;
-                    if (user?.role === 'reviewer') allReviewersMap[user.id] = user;
-                });
-            });
-
-            if (Object.keys(allReviewersMap).length === 0) {
-                console.warn("No reviewers discovered via events.");
-            }
-
-            setReviewers(Object.values(allReviewersMap));
 
         } catch (err) {
             console.error("Discovery error:", err);
-            setError("Failed to complete discovery. Some reviewers might not appear.");
         } finally {
             setLoading(false);
         }
@@ -113,7 +71,11 @@ const AssignReviewers = () => {
 
     const handleAssign = async () => {
         if (!selectedSubmission) {
-            setError("Please select a submission.");
+            toast({
+                variant: "destructive",
+                title: "Selection missing",
+                description: "Please select a submission to assign reviewers.",
+            });
             return;
         }
 
@@ -121,35 +83,35 @@ const AssignReviewers = () => {
         if (manualId) idsToAssign.push(parseInt(manualId));
 
         if (idsToAssign.length === 0) {
-            setError("Please select/enter at least one reviewer ID.");
+            toast({
+                variant: "destructive",
+                title: "No reviewers selected",
+                description: "Choose at least one reviewer or enter an ID.",
+            });
             return;
         }
 
         setProcessing(true);
-        setError(null);
         try {
             await api.post(`/api/submissions/${selectedSubmission.id}/assign-reviewers/`, {
                 reviewer_ids: idsToAssign
             });
 
-            // CRITICAL LINK: Send discovery messages to reviewers since backend dashboard doesn't list assigned papers
-            const messagePromises = idsToAssign.map(rid =>
-                api.post('/api/messages/', {
-                    recipient: rid,
-                    content: `REVIEW_ASSIGNMENT_ID:${selectedSubmission.id}`,
-                    related_event: selectedSubmission.event
-                }).catch(() => null) // Ignore message failures
-            );
-            await Promise.all(messagePromises);
+            toast({
+                title: "Success",
+                description: `Reviewers assigned to "${selectedSubmission.title}".`,
+            });
 
-            setSuccess(`Assignments finalized for "${selectedSubmission.title}" and reviewers notified via dashboard.`);
             setSelectedSubmission(null);
             setSelectedReviewers([]);
             setManualId('');
             fetchData();
-            setTimeout(() => setSuccess(null), 3000);
         } catch (err) {
-            setError(err.response?.data?.error || "Failed to finalize assignments.");
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: err.response?.data?.error || "Assignment failed.",
+            });
         } finally {
             setProcessing(false);
         }
@@ -163,16 +125,15 @@ const AssignReviewers = () => {
         );
     };
 
-    const filteredSubmissions = submissions.filter(s =>
-        s.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (s.keywords && s.keywords.toLowerCase().includes(searchTerm.toLowerCase()))
+    const filteredSubmissions = submissions.filter(sub =>
+        sub.title?.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
     if (loading) {
         return (
             <OrganizerSidebar userInfo={userInfo}>
-                <div className="flex h-64 items-center justify-center">
-                    <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                <div className="flex h-[50vh] items-center justify-center">
+                    <RefreshCw className="w-8 h-8 text-slate-300 animate-spin" />
                 </div>
             </OrganizerSidebar>
         );
@@ -180,178 +141,165 @@ const AssignReviewers = () => {
 
     return (
         <OrganizerSidebar userInfo={userInfo}>
-            <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">Assign Reviewers</h1>
-                <p className="text-gray-500">Pair scientific submissions with qualified committee members.</p>
+            <div className="mb-6">
+                <h1 className="text-2xl font-bold text-slate-900 mb-1 leading-tight">Assign Reviewers</h1>
+                <p className="text-sm text-slate-500">Designate experts to review incoming scientific submissions.</p>
             </div>
 
-            {error && (
-                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg mb-6 flex items-center gap-3">
-                    <AlertCircle size={20} />
-                    <span className="font-medium">{error}</span>
-                </div>
-            )}
-
-            {success && (
-                <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-lg mb-6 flex items-center gap-3 animate-pulse">
-                    <CheckCircle2 size={20} />
-                    <span className="font-medium">{success}</span>
-                </div>
-            )}
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Left: Submissions List */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Submissions List */}
                 <div className="lg:col-span-2 space-y-4">
-                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden text-right">
-                        <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
-                            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                                <FileText size={18} className="text-blue-600" />
-                                Submissions
-                            </h3>
-                            <div className="relative">
-                                <input
-                                    type="text"
-                                    placeholder="Search papers..."
-                                    className="pl-9 pr-4 py-2 border border-gray-200 rounded-lg text-sm focus:border-blue-500 outline-none transition-all"
-                                    value={searchTerm}
-                                    onChange={(e) => setSearchTerm(e.target.value)}
-                                />
-                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <Card className="border-slate-200 shadow-sm overflow-hidden">
+                        <CardHeader className="py-4 px-6 border-b border-slate-100 bg-slate-50/50">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                                    Submissions
+                                    <Badge variant="secondary" className="bg-slate-200 text-slate-700 text-[10px] px-1.5 h-4 border-none">
+                                        {submissions.length}
+                                    </Badge>
+                                </CardTitle>
+                                <div className="relative w-full sm:w-64">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
+                                    <input
+                                        type="text"
+                                        placeholder="Search titles..."
+                                        className="w-full pl-9 pr-4 py-1.5 bg-white border border-slate-200 rounded-md text-sm outline-none focus:border-slate-400 transition-all placeholder:text-slate-400 shadow-sm"
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                    />
+                                </div>
                             </div>
-                        </div>
+                        </CardHeader>
 
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50 text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-gray-100">
+                                <thead className="bg-slate-50/30 border-b border-slate-100">
                                     <tr>
-                                        <th className="py-4 px-6">Paper Details</th>
-                                        <th className="py-4 px-6 text-center">Status</th>
-                                        <th className="py-4 px-6 text-right">Action</th>
+                                        <th className="py-3 px-6 text-[10px] font-bold uppercase tracking-wider text-slate-500">Title & Author</th>
+                                        <th className="py-3 px-6 text-center text-[10px] font-bold uppercase tracking-wider text-slate-500">Status</th>
+                                        <th className="py-3 px-6 text-right text-[10px] font-bold uppercase tracking-wider text-slate-500 w-12"></th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-100">
+                                <tbody className="divide-y divide-slate-100">
                                     {filteredSubmissions.length > 0 ? (
                                         filteredSubmissions.map(sub => (
                                             <tr
                                                 key={sub.id}
-                                                className={`hover:bg-gray-50/50 transition-colors cursor-pointer ${selectedSubmission?.id === sub.id ? 'bg-blue-50/50' : ''}`}
+                                                className={cn("group cursor-pointer transition-colors",
+                                                    selectedSubmission?.id === sub.id ? 'bg-blue-50/50' : 'hover:bg-slate-50/30'
+                                                )}
                                                 onClick={() => setSelectedSubmission(sub)}
                                             >
-                                                <td className="py-5 px-6">
-                                                    <div className="font-bold text-gray-900">{sub.title}</div>
-                                                    <div className="text-xs text-gray-500 mt-1">Type: {sub.submission_type} | Author: {sub.author?.username}</div>
+                                                <td className="py-4 px-6">
+                                                    <div className={cn("text-sm font-semibold mb-0.5",
+                                                        selectedSubmission?.id === sub.id ? 'text-blue-700' : 'text-slate-900'
+                                                    )}>
+                                                        {sub.title}
+                                                    </div>
+                                                    <div className="text-[11px] text-slate-500 font-medium">
+                                                        By {sub.author_name || 'Anonymous'} • ID: {sub.id}
+                                                    </div>
                                                 </td>
-                                                <td className="py-5 px-6 text-center">
-                                                    <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${sub.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                                                            sub.status === 'under_review' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                                                'bg-green-50 text-green-700 border-green-100'
-                                                        }`}>
-                                                        {sub.status.replace('_', ' ')}
-                                                    </span>
+                                                <td className="py-4 px-6 text-center">
+                                                    <Badge variant="outline" className={cn("text-[9px] font-semibold px-2 py-0.5 uppercase border-none",
+                                                        sub.status === 'accepted' ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700'
+                                                    )}>
+                                                        {sub.status?.replace('_', ' ') || 'PENDING'}
+                                                    </Badge>
                                                 </td>
-                                                <td className="py-5 px-6 text-right">
-                                                    <div className={`p-2 rounded-lg transition-all ${selectedSubmission?.id === sub.id ? 'bg-blue-600 text-white' : 'text-gray-400'}`}>
-                                                        <ChevronRight size={18} />
+                                                <td className="py-4 px-6 text-right">
+                                                    <div className={cn("p-1 rounded-md transition-all",
+                                                        selectedSubmission?.id === sub.id ? 'bg-blue-100 text-blue-700 rotate-90' : 'text-slate-300'
+                                                    )}>
+                                                        <ChevronRight size={16} />
                                                     </div>
                                                 </td>
                                             </tr>
                                         ))
                                     ) : (
                                         <tr>
-                                            <td colSpan="3" className="py-12 text-center text-gray-500">No submissions found.</td>
+                                            <td colSpan="3" className="py-16 text-center">
+                                                <p className="text-slate-400 text-sm">No submissions found.</p>
+                                            </td>
                                         </tr>
                                     )}
                                 </tbody>
                             </table>
                         </div>
-                    </div>
+                    </Card>
                 </div>
 
-                {/* Right: Reviewers & Finalization */}
+                {/* Reviewers Sidebar */}
                 <div className="space-y-6">
-                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                        <div className="p-4 border-b border-gray-100 bg-gray-50/50">
-                            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                                <UsersIcon size={18} className="text-indigo-600" />
-                                Available Reviewers
-                            </h3>
-                        </div>
-                        <div className="p-4 max-h-[400px] overflow-y-auto space-y-2">
+                    <Card className="border-slate-200 shadow-sm overflow-hidden flex flex-col max-h-[500px]">
+                        <CardHeader className="py-4 px-6 border-b border-slate-100 bg-slate-50/50 shrink-0">
+                            <CardTitle className="text-sm font-semibold">Available Reviewers</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-2 overflow-y-auto space-y-1 flex-1">
                             {reviewers.length > 0 ? (
                                 reviewers.map(reviewer => (
                                     <div
                                         key={reviewer.id}
                                         onClick={() => toggleReviewerSelection(reviewer.id)}
-                                        className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between ${selectedReviewers.includes(reviewer.id)
-                                                ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500'
-                                                : 'border-gray-100 hover:border-gray-300'
-                                            }`}
+                                        className={cn("p-3 rounded-lg border transition-all cursor-pointer flex items-center justify-between group",
+                                            selectedReviewers.includes(reviewer.id) ? 'border-blue-200 bg-blue-50/50 shadow-sm' : 'border-transparent hover:bg-slate-50'
+                                        )}
                                     >
                                         <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs">
+                                            <div className={cn("w-8 h-8 rounded-full flex items-center justify-center font-bold text-[10px] shadow-sm",
+                                                selectedReviewers.includes(reviewer.id) ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500'
+                                            )}>
                                                 {reviewer.username?.charAt(0).toUpperCase()}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold text-gray-900">{reviewer.username}</p>
-                                                <p className="text-[10px] text-gray-500 truncate max-w-[120px]">{reviewer.institution || 'No Institution'}</p>
+                                                <p className={cn("text-sm font-semibold",
+                                                    selectedReviewers.includes(reviewer.id) ? 'text-blue-700' : 'text-slate-900'
+                                                )}>
+                                                    {reviewer.username}
+                                                </p>
+                                                <p className="text-[10px] text-slate-500">ID: {reviewer.id}</p>
                                             </div>
                                         </div>
                                         {selectedReviewers.includes(reviewer.id) && (
-                                            <CheckCircle2 size={16} className="text-indigo-600" />
+                                            <div className="text-blue-600">
+                                                <Check size={16} strokeWidth={3} />
+                                            </div>
                                         )}
                                     </div>
                                 ))
                             ) : (
-                                <p className="text-center py-8 text-gray-400 text-sm">No reviewers found in the system.</p>
+                                <p className="py-8 text-center text-slate-400 text-xs">No reviewers available.</p>
                             )}
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
 
-                    {/* Manual ID Addition */}
-                    <div className="bg-indigo-50 border border-indigo-100 rounded-xl p-4">
-                        <label className="text-[10px] font-black text-indigo-400 uppercase tracking-widest mb-2 block">Quick Add by User ID</label>
-                        <div className="flex gap-2">
+                    <Card className="border-slate-200 shadow-sm p-5 space-y-4">
+                        <div className="space-y-2">
+                            <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Manual Reviewer ID</label>
                             <input
                                 type="number"
-                                placeholder="Enter ID (e.g. 5)"
-                                className="flex-1 px-3 py-2 bg-white border border-indigo-200 rounded-lg text-sm outline-none focus:ring-2 ring-indigo-500/20"
+                                placeholder="Enter ID..."
+                                className="w-full bg-white border border-slate-200 rounded-md h-9 px-3 text-sm outline-none focus:border-slate-400 transition-all"
                                 value={manualId}
                                 onChange={(e) => setManualId(e.target.value)}
                             />
-                            <div className="bg-indigo-600 text-white p-2 rounded-lg">
-                                <UserCheck size={16} />
-                            </div>
                         </div>
-                        <p className="text-[9px] text-indigo-400 mt-2 leading-tight">Use this if a newly created reviewer doesn't appear in the discovery list yet.</p>
-                    </div>
 
-                    <div className="bg-white border border-gray-200 rounded-xl shadow-sm p-6 text-right">
-                        <div className="mb-4 text-left">
-                            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Assignment Summary</h4>
-                            <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Selected Paper:</span>
-                                    <span className="font-bold text-gray-900 truncate max-w-[150px]">{selectedSubmission?.title || 'None'}</span>
-                                </div>
-                                <div className="flex justify-between text-sm">
-                                    <span className="text-gray-500">Selected Reviewers:</span>
-                                    <span className="font-bold text-gray-900">{selectedReviewers.length + (manualId ? 1 : 0)}</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button
+                        <Button
                             onClick={handleAssign}
-                            disabled={!selectedSubmission || (selectedReviewers.length === 0 && !manualId) || processing}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-xl shadow-lg shadow-blue-600/20 transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={processing}
+                            className="w-full h-10 bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold rounded-md transition-all flex items-center justify-center gap-2"
                         >
                             {processing ? (
-                                <Loader2 className="animate-spin" size={20} />
+                                <RefreshCw className="animate-spin" size={16} />
                             ) : (
-                                <UserCheck size={20} />
+                                <>
+                                    <Zap size={16} fill="currentColor" />
+                                    <span>Assign Panel</span>
+                                </>
                             )}
-                            Finalize Assignment
-                        </button>
-                    </div>
+                        </Button>
+                    </Card>
                 </div>
             </div>
         </OrganizerSidebar>

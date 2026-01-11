@@ -8,27 +8,68 @@ import {
     ClipboardCheck,
     Star,
     MessageSquare,
-    Send,
     AlertCircle,
-    Loader2
+    RefreshCw,
+    TrendingUp,
+    ArrowRight
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../../services/api';
 import ReviewerSidebar from '../../../components/layout/ReviewerSidebar';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
-const StatCard = ({ title, value, icon: Icon, colorClass }) => (
-    <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
-        <div className="flex items-center justify-between">
-            <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-                <p className="text-2xl font-bold text-gray-900">{value}</p>
+const StatCard = ({ title, value, icon: Icon, subtitle }) => (
+    <Card className="border-slate-200 dark:border-slate-800 shadow-sm transition-shadow hover:shadow-md">
+        <CardContent className="p-6">
+            <div className="flex items-center justify-between">
+                <div>
+                    <p className="text-sm font-medium text-slate-500 mb-1">{title}</p>
+                    <p className="text-2xl font-semibold text-slate-900 dark:text-white tracking-tight">{value}</p>
+                    <p className="text-xs text-slate-400 mt-1">{subtitle}</p>
+                </div>
+                <div className="p-3 rounded-xl bg-slate-100/50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400">
+                    <Icon size={20} />
+                </div>
             </div>
-            <div className={`p-3 rounded-lg ${colorClass}`}>
-                <Icon size={24} />
+        </CardContent>
+    </Card>
+);
+
+const PaperItem = ({ paper }) => {
+    const navigate = useNavigate();
+    return (
+        <div
+            className="p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer border-b border-slate-100 dark:border-slate-800 last:border-0"
+            onClick={() => navigate('/submissions')}
+        >
+            <div className="flex items-center gap-4">
+                <div className="text-slate-400">
+                    <FileText size={18} />
+                </div>
+                <div>
+                    <h4 className="text-sm font-medium text-slate-900 dark:text-white line-clamp-1 truncate max-w-md">
+                        {paper.title}
+                    </h4>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                        Assigned {new Date(paper.submitted_at).toLocaleDateString()} • ID: #{paper.id}
+                    </p>
+                </div>
+            </div>
+            <div className="flex items-center gap-6">
+                <Badge variant="secondary" className={cn(
+                    "text-[10px] font-medium px-2 py-0.5",
+                    paper.status === 'under_review' ? "bg-amber-50 text-amber-700" : "bg-emerald-50 text-emerald-700"
+                )}>
+                    {paper.status.replace('_', ' ')}
+                </Badge>
+                <ChevronRight size={16} className="text-slate-300" />
             </div>
         </div>
-    </div>
-);
+    );
+};
 
 const DashboardReviewer = () => {
     const [loading, setLoading] = useState(true);
@@ -40,32 +81,23 @@ const DashboardReviewer = () => {
     const fetchData = async () => {
         try {
             setLoading(true);
-            const [profileRes, dashRes, messagesRes, notificationsRes] = await Promise.all([
+            const [profileRes, dashRes, messagesRes] = await Promise.all([
                 api.get('/api/auth/profile/'),
                 api.get('/api/dashboard/'),
-                api.get('/api/messages/'),
-                api.get('/api/notifications/')
+                api.get('/api/messages/')
             ]);
 
             setUserInfo(profileRes.data);
             setDashboardData(dashRes.data);
 
             const allFoundIds = new Set();
-
-            // 1. Discovery from Messages (My custom system)
             const assignmentMessages = (messagesRes.data.results || messagesRes.data).filter(m =>
                 m.content && m.content.startsWith('REVIEW_ASSIGNMENT_ID:')
             );
             assignmentMessages.forEach(m => allFoundIds.add(m.content.split(':')[1]));
 
-            // 2. Discovery from Notifications (Backend system)
-            // If notification says 'assigned to review: title', we still need the ID.
-            // But we can check related_event to narrow down.
-
-            // 3. PROACTIVE PROBING (The "Agentic" Solution)
-            // Since we can't get a list, we'll brute-force probe the first 50 IDs.
-            // In a starting system, IDs are low and this is safe/fast (1 batch request).
-            const probeIds = Array.from({ length: 50 }, (_, i) => i + 1);
+            // Proactive probing for assignments
+            const probeIds = Array.from({ length: 30 }, (_, i) => i + 1);
             const probePromises = probeIds.map(id => api.get(`/api/submissions/${id}/`).catch(() => null));
             const probeResponses = await Promise.all(probePromises);
 
@@ -73,7 +105,6 @@ const DashboardReviewer = () => {
                 if (res?.data) {
                     const sub = res.data;
                     const userId = profileRes.data.id;
-                    // Verify if current user is in assigned_reviewers array
                     const isAssigned = sub.assigned_reviewers?.some(rid =>
                         (typeof rid === 'object' ? rid.id === userId : rid === userId)
                     );
@@ -81,7 +112,6 @@ const DashboardReviewer = () => {
                 }
             });
 
-            // Final Fetch for verified papers to ensure full data
             const finalPromises = Array.from(allFoundIds).map(id => api.get(`/api/submissions/${id}/`).catch(() => null));
             const finalResponses = await Promise.all(finalPromises);
             const finalPapers = finalResponses
@@ -91,7 +121,7 @@ const DashboardReviewer = () => {
             setDiscoveredSubmissions(finalPapers);
 
         } catch (error) {
-            console.error("Aggressive Discovery error:", error);
+            console.error("Discovery error:", error);
             if (error.response?.status === 401) navigate('/login');
         } finally {
             setLoading(false);
@@ -104,118 +134,120 @@ const DashboardReviewer = () => {
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-gray-50">
-                <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-            </div>
+            <ReviewerSidebar userInfo={userInfo}>
+                <div className="flex h-[50vh] items-center justify-center">
+                    <RefreshCw className="w-8 h-8 text-slate-300 animate-spin" />
+                </div>
+            </ReviewerSidebar>
         );
     }
 
     return (
         <ReviewerSidebar userInfo={userInfo}>
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900 mb-2">Reviewer Dashboard</h1>
-                <p className="text-gray-500 text-sm">Reviewing assignments and scientific contributions.</p>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white uppercase mb-1">
+                    Welcome, {userInfo?.first_name || userInfo?.username}
+                </h1>
+                <p className="text-sm text-slate-500">
+                    Audit scientific contributions and provide subject matter expertise.
+                </p>
             </div>
 
             {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
                 <StatCard
-                    title="Assigned Papers"
+                    title="Assignments"
                     value={discoveredSubmissions.length}
                     icon={ClipboardCheck}
-                    colorClass="bg-blue-50 text-blue-600"
+                    subtitle="Scientific works"
                 />
                 <StatCard
-                    title="Pending Action"
+                    title="Action Required"
                     value={discoveredSubmissions.filter(s => s.status === 'under_review').length}
                     icon={Clock}
-                    colorClass="bg-orange-50 text-orange-600"
+                    subtitle="Reviews in progress"
                 />
                 <StatCard
-                    title="Notifications"
+                    title="Alerts"
                     value={dashboardData?.unread_notifications || 0}
                     icon={MessageSquare}
-                    colorClass="bg-indigo-50 text-indigo-600"
+                    subtitle="New notifications"
                 />
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-right">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Main: Assigned Papers List */}
-                <div className="lg:col-span-2">
-                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                        <div className="p-5 border-b border-gray-100 flex items-center justify-between bg-gray-50/30">
-                            <h3 className="font-bold text-gray-900 flex items-center gap-2">
-                                <FileText size={18} className="text-blue-600" />
-                                Assigned Papers for Review
-                            </h3>
-                            <span className="text-xs bg-blue-100 text-blue-700 font-bold px-2 py-1 rounded-full">{discoveredSubmissions.length} Total</span>
-                        </div>
-                        <div className="divide-y divide-gray-100">
+                <div className="lg:col-span-8">
+                    <Card className="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                        <CardHeader className="flex flex-row items-center justify-between py-4 border-b border-slate-100 dark:border-slate-800">
+                            <div>
+                                <CardTitle className="text-sm font-semibold">Active Assignments</CardTitle>
+                                <CardDescription className="text-xs">Pending peer review evaluations</CardDescription>
+                            </div>
+                            <Badge variant="outline" className="text-[10px] font-medium px-2 py-0.5">
+                                {discoveredSubmissions.length} Papers
+                            </Badge>
+                        </CardHeader>
+                        <CardContent className="p-0">
                             {discoveredSubmissions.length > 0 ? (
-                                discoveredSubmissions.map(sub => (
-                                    <div key={sub.id} className="p-5 hover:bg-gray-50 transition-all group flex items-center justify-between">
-                                        <div className="flex items-center gap-4 text-left">
-                                            <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 group-hover:bg-blue-100 group-hover:text-blue-600 transition-colors">
-                                                <FileText size={24} />
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors">{sub.title}</h4>
-                                                <div className="flex items-center gap-3 mt-1">
-                                                    <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded font-black uppercase text-gray-500 tracking-tighter">ID: #{sub.id}</span>
-                                                    <span className="text-xs text-gray-400 flex items-center gap-1"><Clock size={12} /> Assigned: {new Date(sub.submitted_at).toLocaleDateString()}</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center gap-3">
-                                            <span className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${sub.status === 'under_review' ? 'bg-orange-50 text-orange-600 border-orange-100' : 'bg-green-50 text-green-600 border-green-100'
-                                                }`}>
-                                                {sub.status.replace('_', ' ')}
-                                            </span>
-                                            <Link
-                                                to="/submissions"
-                                                className="bg-gray-100 text-gray-700 text-xs font-bold py-2 px-4 rounded-lg hover:bg-gray-200 transition-all flex items-center gap-2"
-                                            >
-                                                Details <ChevronRight size={14} />
-                                            </Link>
-                                        </div>
-                                    </div>
-                                ))
+                                <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                                    {discoveredSubmissions.map(sub => (
+                                        <PaperItem key={sub.id} paper={sub} />
+                                    ))}
+                                </div>
                             ) : (
-                                <div className="p-16 text-center text-gray-500">
-                                    <ClipboardCheck size={48} className="mx-auto mb-4 text-gray-200" />
-                                    <p className="font-bold">No papers assigned yet.</p>
-                                    <p className="text-sm">Once an organizer assigns you a paper, it will appear here.</p>
+                                <div className="p-16 text-center">
+                                    <ClipboardCheck className="mx-auto text-slate-200 mb-4" size={40} />
+                                    <p className="text-slate-400 text-sm">No pending assignments found.</p>
                                 </div>
                             )}
-                        </div>
-                    </div>
+                        </CardContent>
+                    </Card>
                 </div>
 
-                {/* Sidebar: Legend & Tips */}
-                <div className="space-y-6 text-left">
-                    <div className="bg-gradient-to-br from-blue-600 to-indigo-700 p-6 rounded-2xl text-white shadow-xl shadow-blue-500/20">
-                        <h3 className="font-bold mb-3 flex items-center gap-2">
-                            <AlertCircle size={18} /> Reviewer Guidelines
-                        </h3>
-                        <ul className="text-xs space-y-3 opacity-90 leading-relaxed list-disc ml-4">
-                            <li>Check the <strong>abstract and full paper</strong> before scoring.</li>
-                            <li>Scores range from 1 (Poor) to 5 (Outstanding).</li>
-                            <li>Provide constructive, scientific comments for the author.</li>
-                            <li>Your review determines the final decision (Accepted/Rejected).</li>
+                {/* Sidebar: Guidelines & Links */}
+                <div className="lg:col-span-4 space-y-6">
+                    <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-800">
+                        <div className="flex items-center gap-2 mb-4 text-blue-600">
+                            <AlertCircle size={16} />
+                            <h4 className="text-xs font-semibold uppercase">Reviewer Protocol</h4>
+                        </div>
+                        <ul className="text-xs space-y-3 text-slate-500 uppercase leading-relaxed">
+                            <li className="flex gap-2">
+                                <span className="text-blue-400">•</span> Check abstract and full paper before scoring.
+                            </li>
+                            <li className="flex gap-2">
+                                <span className="text-blue-400">•</span> Scores range from 1 (Poor) to 5 (Outstanding).
+                            </li>
+                            <li className="flex gap-2">
+                                <span className="text-blue-400">•</span> Provide constructive, scientific comments.
+                            </li>
                         </ul>
                     </div>
 
-                    <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-sm">
-                        <h3 className="font-bold text-gray-900 mb-4">Quick Links</h3>
-                        <div className="space-y-2">
-                            <Link to="/events" className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-all text-sm font-semibold text-gray-700">
-                                Browse Events <ChevronRight size={16} />
-                            </Link>
-                            <Link to="/settings" className="flex items-center justify-between p-3 rounded-xl border border-gray-100 hover:border-indigo-300 hover:bg-indigo-50 transition-all text-sm font-semibold text-gray-700">
-                                Profile Info <ChevronRight size={16} />
-                            </Link>
-                        </div>
-                    </div>
+                    <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+                        <CardHeader className="py-4 border-b border-slate-100 dark:border-slate-800">
+                            <CardTitle className="text-sm font-semibold">Expert Access</CardTitle>
+                        </CardHeader>
+                        <CardContent className="p-4 space-y-2">
+                            <Button
+                                onClick={() => navigate('/events')}
+                                variant="outline"
+                                className="w-full text-xs h-10 border-slate-200 dark:border-slate-800 justify-between px-4"
+                            >
+                                <span>Browse Registry</span>
+                                <ArrowRight size={14} />
+                            </Button>
+                            <Button
+                                onClick={() => navigate('/settings')}
+                                variant="outline"
+                                className="w-full text-xs h-10 border-slate-200 dark:border-slate-800 justify-between px-4"
+                            >
+                                <span>Expert Profile</span>
+                                <ArrowRight size={14} />
+                            </Button>
+                        </CardContent>
+                    </Card>
                 </div>
             </div>
         </ReviewerSidebar>

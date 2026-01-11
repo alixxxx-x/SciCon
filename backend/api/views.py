@@ -151,7 +151,7 @@ class SubmissionListCreateView(generics.ListCreateAPIView):
     def perform_create(self, serializer):
         event_id = self.kwargs.get('event_id')
         if self.request.user.role != 'author':
-            raise serializers.ValidationError("Only authors can submit submissions.")
+            raise serializers.ValidationError("Only authors can submit.")
         serializer.save(author=self.request.user, event_id=event_id)
 
 
@@ -175,10 +175,7 @@ class MySubmissionsView(generics.ListAPIView):
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        my_submissions= Submission.objects.filter(author=self.request.user) 
-        #remove reviews
-        my_submissions= my_submissions.prefetch_related(None)           
-        return my_submissions
+        return Submission.objects.filter(author=self.request.user)
 
 
 @api_view(['POST'])
@@ -500,7 +497,7 @@ def survey_results(request, survey_id):
 
 
 
-# Certificate Views (FIXED - NO utils.py dependency)
+# Certificate Views
 
 
 class CertificateListView(generics.ListAPIView):

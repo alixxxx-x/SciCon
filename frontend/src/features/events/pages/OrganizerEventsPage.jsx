@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Search, Calendar, ChevronRight, FileText, Loader2, Users } from 'lucide-react';
+import { Plus, Search, Calendar, ChevronRight, FileText, Loader2, Users, RefreshCw, Pencil, Info } from 'lucide-react';
 import api from '../../../services/api';
 import OrganizerSidebar from '../../../components/layout/OrganizerSidebar';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const OrganizerEvents = () => {
     const [events, setEvents] = useState([]);
@@ -41,102 +45,110 @@ const OrganizerEvents = () => {
     const getStatusStyle = (status) => {
         switch (status) {
             case 'open_call': return 'bg-green-50 text-green-700 border-green-100';
-            case 'ongoing': return 'bg-purple-50 text-purple-700 border-purple-100';
-            case 'program_ready': return 'bg-blue-50 text-blue-700 border-blue-100';
-            case 'completed': return 'bg-gray-50 text-gray-700 border-gray-100';
-            default: return 'bg-orange-50 text-orange-700 border-orange-100';
+            case 'ongoing': return 'bg-blue-50 text-blue-700 border-blue-100';
+            case 'program_ready': return 'bg-purple-50 text-purple-700 border-purple-100';
+            case 'completed': return 'bg-slate-50 text-slate-600 border-slate-100';
+            default: return 'bg-amber-50 text-amber-700 border-amber-100';
         }
     };
 
     return (
         <OrganizerSidebar userInfo={userInfo}>
-            <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
-                <div>
-                    <h1 className="text-3xl font-black text-gray-900 mb-2">My Events</h1>
-                    <p className="text-gray-500 font-medium">Manage and monitor the progress of your scientific conferences.</p>
+            <div className="mb-8">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div>
+                        <h1 className="text-2xl font-bold text-slate-900 dark:text-white uppercase mb-1">
+                            Events List
+                        </h1>
+                        <p className="text-sm text-slate-500">
+                            Manage your events and monitor their status.
+                        </p>
+                    </div>
+                    <Button onClick={() => navigate('/events/create')} className="bg-blue-600 hover:bg-blue-700 text-white text-xs h-9 px-4 rounded-lg">
+                        <Plus className="mr-2" size={16} /> New Event
+                    </Button>
                 </div>
-
             </div>
 
             <div className="space-y-6">
-                {/* Control Bar */}
-                <div className="flex flex-col md:flex-row gap-4">
-                    <div className="relative flex-1">
-                        <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
-                        <input
-                            type="text"
-                            placeholder="Search among your events..."
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            className="w-full pl-12 pr-4 py-4 bg-white border border-gray-100 rounded-2xl outline-none focus:border-blue-500 shadow-sm transition-all font-medium"
-                        />
-                    </div>
+                <div className="relative flex-1">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                    <input
+                        type="text"
+                        placeholder="Search events..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 shadow-sm text-sm"
+                    />
                 </div>
 
-                {/* Events Grid/List */}
-                <div className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden min-h-[400px]">
+                <Card className="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden min-h-[400px]">
                     {loading ? (
                         <div className="py-32 flex flex-col items-center justify-center">
-                            <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-                            <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">Fetching your catalog...</p>
+                            <RefreshCw className="w-8 h-8 text-slate-300 animate-spin mb-4" />
+                            <p className="text-slate-400 text-xs italic">Loading events...</p>
                         </div>
                     ) : filteredEvents.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-50">
+                                <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
                                     <tr>
-                                        <th className="py-5 px-8">Conference Title</th>
-                                        <th className="py-5 px-6">Event Date</th>
-                                        <th className="py-5 px-6">Status</th>
-                                        <th className="py-5 px-6 text-center">Registrations</th>
-                                        <th className="py-5 px-8 text-right">Settings</th>
+                                        <th className="py-3 px-6 text-[10px] font-bold uppercase text-slate-400">Event Title</th>
+                                        <th className="py-3 px-6 text-[10px] font-bold uppercase text-slate-400">Event Date</th>
+                                        <th className="py-3 px-6 text-[10px] font-bold uppercase text-slate-400">Status</th>
+                                        <th className="py-3 px-6 text-center text-[10px] font-bold uppercase text-slate-400">Participants</th>
+                                        <th className="py-3 px-6 text-right text-[10px] font-bold uppercase text-slate-400">Actions</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-gray-50">
+                                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                                     {filteredEvents.map((event) => (
-                                        <tr key={event.id} className="hover:bg-blue-50/30 transition-colors group">
-                                            <td className="py-6 px-8">
-                                                <div className="flex items-center gap-4">
-                                                    <div className="w-12 h-12 rounded-2xl bg-gray-50 border border-gray-100 flex items-center justify-center text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-sm">
-                                                        <FileText size={20} />
+                                        <tr key={event.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                                            <td className="py-4 px-6">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-center text-slate-400 group-hover:text-blue-600 transition-colors shadow-sm">
+                                                        <FileText size={18} />
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-gray-900 text-base">{event.title}</p>
-                                                        <p className="text-xs text-gray-400 font-medium">{event.event_type}</p>
+                                                        <p className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-tight">{event.title}</p>
+                                                        <p className="text-[10px] text-slate-500 uppercase font-medium">{event.event_type}</p>
                                                     </div>
                                                 </div>
                                             </td>
-                                            <td className="py-6 px-6">
-                                                <div className="flex items-center gap-2 text-sm font-bold text-gray-500">
-                                                    <Calendar size={16} className="text-gray-300" />
+                                            <td className="py-4 px-6 text-xs text-slate-600 dark:text-slate-400">
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar size={14} className="text-slate-300" />
                                                     {new Date(event.start_date).toLocaleDateString(undefined, { day: '2-digit', month: 'short', year: 'numeric' })}
                                                 </div>
                                             </td>
-                                            <td className="py-6 px-6">
-                                                <span className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${getStatusStyle(event.status)}`}>
+                                            <td className="py-4 px-6">
+                                                <Badge variant="secondary" className={cn("text-[9px] font-medium px-2 py-0.5 uppercase whitespace-nowrap", getStatusStyle(event.status))}>
                                                     {event.status?.replace('_', ' ')}
-                                                </span>
+                                                </Badge>
                                             </td>
-                                            <td className="py-6 px-6">
+                                            <td className="py-4 px-6 text-center">
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-sm font-black text-gray-900">{event.participants_count || 0}</span>
-                                                    <span className="text-[9px] font-bold text-gray-300 uppercase tracking-tighter">Delegates</span>
+                                                    <span className="text-sm font-semibold text-slate-900 dark:text-white uppercase">{event.participants_count || 0}</span>
+                                                    <span className="text-[9px] text-slate-400 uppercase font-medium">Participants</span>
                                                 </div>
                                             </td>
-                                            <td className="py-6 px-8 text-right">
-                                                <div className="flex items-center justify-end gap-3">
-                                                    <button
+                                            <td className="py-4 px-6 text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
                                                         onClick={() => navigate(`/events/${event.id}/edit`)}
-                                                        className="px-4 py-2 bg-gray-100 hover:bg-blue-600 hover:text-white text-gray-600 rounded-xl text-xs font-black uppercase tracking-widest transition-all"
+                                                        className="h-8 w-8 text-slate-400 hover:text-blue-600"
                                                     >
-                                                        Edit
-                                                    </button>
-                                                    <button
+                                                        <Pencil size={14} />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
                                                         onClick={() => navigate(`/events/${event.id}`)}
-                                                        className="p-2 text-gray-300 hover:text-blue-600 bg-gray-50 hover:bg-blue-50 rounded-xl transition-all"
+                                                        className="h-8 w-8 text-slate-400 hover:text-blue-600"
                                                     >
-                                                        <ChevronRight size={18} />
-                                                    </button>
+                                                        <ChevronRight size={16} />
+                                                    </Button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -146,13 +158,12 @@ const OrganizerEvents = () => {
                         </div>
                     ) : (
                         <div className="py-32 text-center">
-                            <Calendar size={48} className="mx-auto text-gray-100 mb-6" />
-                            <h3 className="text-xl font-bold text-gray-900 mb-2">No Conferences Found</h3>
-                            <p className="text-gray-400 font-medium mb-8">You haven't created any events yet or matching your search.</p>
-
+                            <Calendar size={40} className="mx-auto text-slate-100 mb-6" />
+                            <h3 className="text-base font-bold text-slate-900 uppercase">No Events Found</h3>
+                            <p className="text-slate-400 text-xs italic mt-1">Start by creating your first event.</p>
                         </div>
                     )}
-                </div>
+                </Card>
             </div>
         </OrganizerSidebar>
     );

@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FileText, CheckCircle, XCircle, Clock, ArrowLeft, Loader2, ChevronRight, Search, Filter } from 'lucide-react';
+import { FileText, CheckCircle, XCircle, Clock, ArrowLeft, Loader2, ChevronRight, Search, Filter, RefreshCw } from 'lucide-react';
 import api from '../../../services/api';
 import OrganizerSidebar from '../../../components/layout/OrganizerSidebar';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const EventSubmissions = () => {
     const { id } = useParams();
@@ -11,6 +15,7 @@ const EventSubmissions = () => {
     const [loading, setLoading] = useState(true);
     const [eventTitle, setEventTitle] = useState('');
     const [userInfo, setUserInfo] = useState(null);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         const fetchData = async () => {
@@ -34,96 +39,110 @@ const EventSubmissions = () => {
 
     const getStatusStyle = (status) => {
         switch (status) {
-            case 'accepted': return 'bg-green-50 text-green-700 border-green-100';
+            case 'accepted': return 'bg-emerald-50 text-emerald-700 border-emerald-100';
             case 'rejected': return 'bg-red-50 text-red-700 border-red-100';
-            case 'pending': return 'bg-yellow-50 text-yellow-700 border-yellow-100';
-            default: return 'bg-gray-50 text-gray-700 border-gray-100';
+            case 'pending': return 'bg-amber-50 text-amber-700 border-amber-100';
+            default: return 'bg-slate-50 text-slate-600 border-slate-100';
         }
     };
 
+    const filteredSubmissions = submissions.filter(sub =>
+        sub.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        sub.author_name?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-gray-50">
-                <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-            </div>
+            <OrganizerSidebar userInfo={userInfo}>
+                <div className="flex h-[50vh] items-center justify-center">
+                    <RefreshCw className="w-8 h-8 text-slate-300 animate-spin" />
+                </div>
+            </OrganizerSidebar>
         );
     }
 
     return (
         <OrganizerSidebar userInfo={userInfo}>
             <div className="mb-8">
-                <button
+                <Button
+                    variant="ghost"
                     onClick={() => navigate('/dashboard-organizer')}
-                    className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors mb-4 text-sm font-semibold"
+                    className="flex items-center gap-2 text-slate-500 hover:text-blue-600 mb-4 h-8 px-2 text-xs font-medium"
                 >
-                    <ArrowLeft size={16} /> Back to Dashboard
-                </button>
-                <h1 className="text-2xl font-bold text-gray-900">Event Submissions</h1>
-                <p className="text-gray-500">Reviewing papers for: <span className="text-blue-600 font-bold">{eventTitle}</span></p>
+                    <ArrowLeft size={14} /> Back to Dashboard
+                </Button>
+                <h1 className="text-2xl font-bold text-slate-900 dark:text-white uppercase mb-1">Event Submissions</h1>
+                <p className="text-sm text-slate-500">Scientific review for: <span className="text-blue-600 font-semibold">{eventTitle}</span></p>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden text-right">
-                <div className="p-4 border-b border-gray-100 bg-gray-50/30 flex flex-col md:flex-row gap-4 items-center">
-                    <div className="relative flex-1 w-full">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                        <input
-                            type="text"
-                            placeholder="Search by title or author..."
-                            className="w-full pl-10 pr-4 py-2 bg-white border border-gray-100 rounded-lg outline-none focus:border-blue-500 transition-colors"
-                        />
+            <Card className="border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
+                <CardHeader className="py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/30">
+                    <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
+                        <div className="relative flex-1 w-full max-w-md">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
+                            <input
+                                type="text"
+                                placeholder="Search by title or author..."
+                                value={searchTerm}
+                                onChange={(e) => setSearchTerm(e.target.value)}
+                                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-100 rounded-lg outline-none focus:ring-1 focus:ring-blue-500 text-sm transition-all"
+                            />
+                        </div>
+                        <Button variant="outline" size="sm" className="text-xs border-slate-200">
+                            <Filter size={14} className="mr-2" /> Status Filter
+                        </Button>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 text-gray-600 font-bold text-sm bg-white border border-gray-100 rounded-lg hover:bg-gray-50">
-                        <Filter size={18} /> Status Filter
-                    </button>
-                </div>
+                </CardHeader>
 
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-gray-100">
-                        <tr>
-                            <th className="py-4 px-6">Submission Title</th>
-                            <th className="py-4 px-6">Submitted By</th>
-                            <th className="py-4 px-6">Status</th>
-                            <th className="py-4 px-6">Date</th>
-                            <th className="py-4 px-6 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {submissions.length > 0 ? (
-                            submissions.map(sub => (
-                                <tr key={sub.id} className="hover:bg-gray-50/50 transition-colors group">
-                                    <td className="py-5 px-6">
-                                        <div className="font-bold text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-1">{sub.title}</div>
-                                        <div className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded inline-block mt-1">ID: #{sub.id}</div>
-                                    </td>
-                                    <td className="py-5 px-6">
-                                        <div className="text-sm font-bold text-gray-700">{sub.author_name || 'Anonymous Author'}</div>
-                                    </td>
-                                    <td className="py-5 px-6">
-                                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getStatusStyle(sub.status)}`}>
-                                            {sub.status.toUpperCase()}
-                                        </span>
-                                    </td>
-                                    <td className="py-5 px-6 text-sm text-gray-400">
-                                        {new Date(sub.submitted_at).toLocaleDateString()}
-                                    </td>
-                                    <td className="py-5 px-6 text-right">
-                                        <button className="bg-white border border-gray-100 text-gray-400 hover:text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition-all shadow-sm">
-                                            <ChevronRight size={18} />
-                                        </button>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-slate-50 dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800">
+                            <tr>
+                                <th className="py-3 px-6 text-[10px] font-bold uppercase text-slate-400">Submission</th>
+                                <th className="py-3 px-6 text-[10px] font-bold uppercase text-slate-400">Researcher</th>
+                                <th className="py-3 px-6 text-[10px] font-bold uppercase text-slate-400 text-center">Lifecycle</th>
+                                <th className="py-3 px-6 text-[10px] font-bold uppercase text-slate-400">Timestamp</th>
+                                <th className="py-3 px-6 text-right text-[10px] font-bold uppercase text-slate-400">Select</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                            {filteredSubmissions.length > 0 ? (
+                                filteredSubmissions.map(sub => (
+                                    <tr key={sub.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                                        <td className="py-4 px-6">
+                                            <div className="text-sm font-semibold text-slate-900 dark:text-white uppercase tracking-tight line-clamp-1">{sub.title}</div>
+                                            <Badge variant="outline" className="text-[9px] font-medium h-4 border-slate-100 text-slate-400 uppercase mt-1">ID: #{sub.id}</Badge>
+                                        </td>
+                                        <td className="py-4 px-6">
+                                            <div className="text-xs font-semibold text-slate-600 uppercase">{sub.author_name || 'Anonymous Author'}</div>
+                                        </td>
+                                        <td className="py-4 px-6 text-center">
+                                            <Badge variant="secondary" className={cn("text-[9px] font-medium px-2 py-0.5 uppercase", getStatusStyle(sub.status))}>
+                                                {sub.status}
+                                            </Badge>
+                                        </td>
+                                        <td className="py-4 px-6 text-[11px] text-slate-400 font-medium whitespace-nowrap">
+                                            {new Date(sub.submitted_at).toLocaleDateString()}
+                                        </td>
+                                        <td className="py-4 px-6 text-right">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-blue-600">
+                                                <ChevronRight size={16} />
+                                            </Button>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" className="py-32 text-center">
+                                        <FileText className="w-10 h-10 text-slate-100 mx-auto mb-4" />
+                                        <p className="text-slate-400 text-xs italic">No scientific works found for this event.</p>
                                     </td>
                                 </tr>
-                            ))
-                        ) : (
-                            <tr>
-                                <td colSpan="5" className="py-24 text-center">
-                                    <FileText className="w-12 h-12 text-gray-200 mx-auto mb-4" />
-                                    <p className="text-gray-400 font-medium">No submissions found for this event yet.</p>
-                                </td>
-                            </tr>
-                        )}
-                    </tbody>
-                </table>
-            </div>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
         </OrganizerSidebar>
     );
 };

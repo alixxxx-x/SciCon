@@ -1,184 +1,184 @@
-/*this file contains stye that apply to the entire website*/
-
-
-/*tailwind css directives */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root{
-  /*COLOR PALETTE */ 
-  --color-primary: #3b82f6; /*main blue */ 
-  --color-primary-dark: #2563eb; /*darker blue for hover */
-  --color-secondary: #60a5fa; /*light bleu */ 
-  --color-accent: #10b981:; /*green for special elements */
-
-  /*background colors*/
-  --color-dark: #0a0a0a;/*main backgroynd*/ 
-  --color-dark-light: #1a1a2e; /*lighter dar for sections */ 
-
-  /*text colors */  
-  --color-light: #ffffff; /*white text */ 
-  --color-gray-light: #d1d5db ; /*light gray text */ 
-  --color-gray: #9ca3af ; /*medim gray text */ 
-  --color-gray-dark: #6b7280 ; /*dark gray text */ 
-
-  /*  spacing    */ 
-  --spacing-xs: 0.25rem; /*4px*/
-  --spacing-sm: 0.5rem; /*8px*/
-  --spacing-md: 1rem; /*16px*/
-  --spacing-lg: 1.5rem; /*24px*/
-  --spacing-xl: 2rem; /*32px*/
-  --spacing-2xl: 3rem; /*48px*/
-  --spacing-3xl: 5rem; /*80px*/
- 
-   /*  border reduis */ 
-   --radius-sm: 4px ;
-    --radius-rm: 8px ;
-     --radius-lg: 12px ;
-      --radius-xl: 16px ;
-
-
-  /* transition   */
-  --transition-fast: 150ms;    
-  --transition-normal: 300ms;    
-  --transition-slow: 500ms;
-  
-  /*shadow */
-    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
-  --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1);
-  --shadow-blue: 0 20px 40px rgba(59, 130, 246, 0.2);
-}
-
-/* custom animations*/
-@keyframes fade-in{
-  from{
-    opacity: 0 ; /*first frame invisible*/
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
   }
-  to{
-    opacity: 1; /*secon frame fully visible */
+
+  .dark {
+    --background: 222 47% 4%;
+    --foreground: 213 31% 91%;
+    --card: 222 47% 7%;
+    --card-foreground: 213 31% 91%;
+    --popover: 222 47% 4%;
+    --popover-foreground: 213 31% 91%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 222 47% 11%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 222 47% 11%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 222 47% 11%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 222 47% 15%;
+    --input: 222 47% 15%;
+    --ring: 224.3 76.3% 48%;
   }
 }
 
-@keyframes fade-text { /*making text fade in and out */
-  0% { 
-    opacity: 0;
+@layer base {
+  * {
+    border-color: hsl(var(--border));
   }
-  10% {
-    opacity: 1;
+
+  body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
-  90% {
-    opacity: 1;
+
+  /* Global Dark Mode Overrides for No-Code-Change implementation */
+  .dark {
+    color-scheme: dark;
   }
-  100% {
-    opacity: 0;
+
+  .dark body {
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
   }
-  
-}
 
-@keyframes slide-up {
-  from{
-    transform: translateY(20px);
-    opacity: 0;
+  /* Overriding literal classes used in components */
+  .dark .bg-white {
+    background-color: hsl(var(--card)) !important;
   }
-  to {
-    transform: translateY(0);
-    opacity: 1;  
+
+  .dark .bg-slate-50,
+  .dark .bg-slate-50\/30,
+  .dark .bg-slate-50\/50 {
+    background-color: hsl(var(--background)) !important;
   }
-}
 
-/* reset / base style */ 
-*{
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-}
-
-html{
-  scroll-behavior:smooth ; /*smooth scrolling for anchor links/sections */
-}
-
-body{
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  background-color: var(--color-dark);
-  color: var(--color-light);
-  line-height: 1.6;
-  overflow-x: hidden; /*this hides anything that sticks out sideways */ 
-}
-
-/*typography */ 
-h1, h2, h3, h4, h5, h6 {
-font-weight: 700;
-line-height: 1.2;
-}
-
-/*animation utilities*/
-.animate-fade-in{
-  animation: fade-in var(--transition-normal) ease-in; /* anim name , timing , start slow end fast */
-}
-
-.animate-slide-up{
-  animation: slide-up var(--transition-normal) ease-out;
-}
-
-/*section padding utilities */ 
-.section-padding {
-  padding: var(--spacing-3xl) var(--spacing-lg);
-}
-
-@media (min-width: 768px) {
-  .section-padding{
-    padding: var(--spacing-3xl) var(--spacing-2xl);
+  .dark .text-slate-900 {
+    color: hsl(var(--foreground)) !important;
   }
-}
 
-/*card base style for consisnet cards */ 
-.card-base{
-   background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius-md);
-  transition: all var(--transition-normal);
-}
-
-.card-base:hover{
-    background-color: rgba(255, 255, 255, 0.1);
-  transform: translateY(-4px);
-  box-shadow: var(--shadow-blue);
-}
-
-/*container utility */
-.container{
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 var(--spacing-lg);
-}
-
-@media (min-width: 768px){
-  .container {
-    padding: 0 var(--spacing-2xl);
+  .dark .text-slate-600,
+  .dark .text-slate-500,
+  .dark .text-slate-400 {
+    color: hsl(var(--foreground) / 0.6) !important;
   }
-}
 
-/*button reset */
-button{
-  cursor: pointer;
-  font-family: inherit;
-}
+  .dark .border-slate-200,
+  .dark .border-slate-100 {
+    border-color: hsl(var(--border)) !important;
+  }
 
-/*focus styles for accessibility */
-:focus-visible{
-  outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
-}
+  /* Specific branding protection */
+  .dark .text-slate-900.uppercase {
+    color: hsl(var(--foreground)) !important;
+  }
 
-/*section color */ 
-::selection {
-background-color: rgba(59, 130, 246, 0.3);
-color: var(--color-light);
-}
-input, textarea, select {
-  color: black !important;
-  background-color: white !important;
+  /* Shadow overrides */
+  .dark .shadow-sm,
+  .dark .shadow-xl,
+  .dark .shadow-2xl,
+  .dark .shadow-slate-200\/50 {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* Navigation specific overrides */
+  .dark nav.bg-white {
+    background-color: hsl(var(--background)) !important;
+    border-bottom-color: hsl(var(--border)) !important;
+  }
+
+  .dark .navigation-menu-link,
+  .dark .text-slate-600.hover\:text-blue-600 {
+    color: hsl(var(--foreground) / 0.7) !important;
+  }
+
+  .dark .text-slate-600.hover\:text-blue-600:hover {
+    color: hsl(var(--primary)) !important;
+  }
+
+  /* Abstract Deadline box refinement */
+  .dark .bg-orange-50\/50 {
+    background-color: hsla(24, 100%, 50%, 0.1) !important;
+    border-color: hsla(24, 100%, 50%, 0.2) !important;
+  }
+
+  .dark .text-orange-800,
+  .dark .text-orange-950 {
+    color: hsla(24, 100%, 70%, 1) !important;
+  }
+
+  /* Status Badge Overrides for Dark Mode */
+  .dark .bg-blue-50 {
+    background-color: hsla(217, 91%, 60%, 0.15) !important;
+    color: hsl(217, 91%, 75%) !important;
+    border-color: hsla(217, 91%, 60%, 0.3) !important;
+  }
+
+  .dark .bg-green-50 {
+    background-color: hsla(142, 70%, 50%, 0.15) !important;
+    color: hsl(142, 70%, 75%) !important;
+    border-color: hsla(142, 70%, 50%, 0.3) !important;
+  }
+
+  .dark .bg-yellow-50 {
+    background-color: hsla(47, 95%, 50%, 0.15) !important;
+    color: hsl(47, 95%, 75%) !important;
+    border-color: hsla(47, 95%, 50%, 0.3) !important;
+  }
+
+  .dark .bg-purple-50 {
+    background-color: hsla(271, 91%, 65%, 0.15) !important;
+    color: hsl(271, 91%, 80%) !important;
+    border-color: hsla(271, 91%, 65%, 0.3) !important;
+  }
+
+  .dark .bg-slate-100 {
+    background-color: hsl(var(--muted)) !important;
+    color: hsl(var(--muted-foreground)) !important;
+    border-color: hsl(var(--border)) !important;
+  }
+
+  /* Disabled State Overrides */
+  .dark .disabled\:bg-slate-100:disabled,
+  .dark .bg-slate-100:disabled {
+    background-color: hsl(var(--muted) / 0.5) !important;
+    color: hsl(var(--foreground) / 0.4) !important;
+    opacity: 0.7;
+  }
+
+  .dark .disabled\:opacity-50:disabled {
+    opacity: 0.8 !important;
+  }
+
+  /* Card specific overrides */
+  .dark .bg-slate-900 {
+    background-color: hsl(var(--secondary)) !important;
+  }
 }

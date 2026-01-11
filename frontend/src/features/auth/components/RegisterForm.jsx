@@ -1,21 +1,23 @@
 import { useState } from "react";
 import api from "../../../services/api";
 import { useNavigate, Link } from "react-router-dom";
-import { User, Mail, Lock, Building, Globe, Microscope, Phone, FileText } from "lucide-react";
-import LoadingIndicator from "../../../components/LoadingIndicator";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Loader2, UserPlus, Sparkles } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 
-function RegisterForm({ route, method }) {
+function RegisterForm({ route }) {
+    const { toast } = useToast();
     const [formData, setFormData] = useState({
         username: "",
         email: "",
         password: "",
         confirmPassword: "",
-        role: "author", // Default role
+        role: "author",
         institution: "",
-        research_domain: "",
-        country: "",
-        phone: "",
-        bio: ""
+        research_domain: ""
     });
 
     const [loading, setLoading] = useState(false);
@@ -34,225 +36,141 @@ function RegisterForm({ route, method }) {
         if (formData.password !== formData.confirmPassword) {
             setError("Passwords do not match");
             setLoading(false);
+            toast({
+                variant: "destructive",
+                description: "Passwords must match to proceed.",
+            });
             return;
         }
 
         try {
-            // Remove confirmPassword before sending
             const { confirmPassword, ...dataToSend } = formData;
-
             await api.post(route, dataToSend);
+
+            toast({
+                title: "Registration Successful",
+                description: "Welcome to SciCon. Your profile is now active.",
+            });
+
             navigate("/login");
         } catch (error) {
             console.error("Registration error:", error);
+            let errorMsg = "Registration failed. Please attempt again.";
             if (error.response?.data) {
-                // Format backend errors
-                const errorMsg = Object.entries(error.response.data)
+                errorMsg = Object.entries(error.response.data)
                     .map(([key, value]) => `${key}: ${value}`)
                     .join('\n');
-                setError(errorMsg);
-            } else {
-                setError("Registration failed. Please try again.");
             }
+            setError(errorMsg);
+            toast({
+                variant: "destructive",
+                title: "Registration Failed",
+                description: "Failed to create profile. Please check your details.",
+            });
         } finally {
             setLoading(false);
         }
     };
 
+    const roles = [
+        { value: 'author', label: 'Author' },
+        { value: 'participant', label: 'Participant' },
+        { value: 'organizer', label: 'Organizer' },
+        { value: 'reviewer', label: 'Reviewer' },
+    ];
+
     return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-            <div className="bg-white border border-gray-200 p-8 rounded-2xl shadow-xl w-full max-w-2xl">
-                <div className="text-center mb-8">
-                    <h1 className="text-3xl font-black text-gray-900 mb-2">Create Account</h1>
-                    <p className="text-gray-500">Join the SciCon community</p>
-                </div>
+        <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fafc] p-4 relative overflow-hidden">
 
-                {error && (
-                    <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-lg mb-6 text-sm font-medium whitespace-pre-wrap">
-                        {error}
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Basic Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Username</label>
-                            <div className="relative">
-                                <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-                                <input
-                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
-                                    type="text"
-                                    name="username"
-                                    value={formData.username}
-                                    onChange={handleChange}
-                                    placeholder="johndoe"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Email</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-                                <input
-                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
-                                    type="email"
-                                    name="email"
-                                    value={formData.email}
-                                    onChange={handleChange}
-                                    placeholder="john@example.com"
-                                    required
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Role Selection */}
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">I am a...</label>
-                        <select
-                            name="role"
-                            value={formData.role}
-                            onChange={handleChange}
-                            className="w-full bg-white border border-gray-300 rounded-xl py-3 px-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors appearance-none"
-                        >
-                            <option value="author">Author (Submit Papers)</option>
-                            <option value="participant">Participant (Attend Events)</option>
-                            <option value="organizer">Organizer (Create Events)</option>
-                            <option value="reviewer">Reviewer (Evaluate Papers)</option>
-                        </select>
-                    </div>
-
-                    {/* Professional Info */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Institution</label>
-                            <div className="relative">
-                                <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-                                <input
-                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
-                                    type="text"
-                                    name="institution"
-                                    value={formData.institution}
-                                    onChange={handleChange}
-                                    placeholder="University / Hospital"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Research Domain</label>
-                            <div className="relative">
-                                <Microscope className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-                                <input
-                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
-                                    type="text"
-                                    name="research_domain"
-                                    value={formData.research_domain}
-                                    onChange={handleChange}
-                                    placeholder="e.g. Cardiology, AI"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Country</label>
-                            <div className="relative">
-                                <Globe className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-                                <input
-                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
-                                    type="text"
-                                    name="country"
-                                    value={formData.country}
-                                    onChange={handleChange}
-                                    placeholder="Your Country"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Phone</label>
-                            <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-                                <input
-                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
-                                    type="tel"
-                                    name="phone"
-                                    value={formData.phone}
-                                    onChange={handleChange}
-                                    placeholder="+213..."
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Bio (Optional)</label>
-                        <div className="relative">
-                            <FileText className="absolute left-3 top-3 text-gray-500 w-4 h-4" />
-                            <textarea
-                                className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors h-24 resize-none"
-                                name="bio"
-                                value={formData.bio}
-                                onChange={handleChange}
-                                placeholder="Tell us a bit about yourself..."
-                            />
-                        </div>
-                    </div>
-
-                    {/* Password */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Password</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-                                <input
-                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
-                                    type="password"
-                                    name="password"
-                                    value={formData.password}
-                                    onChange={handleChange}
-                                    placeholder="••••••••"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div className="space-y-2">
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Confirm Password</label>
-                            <div className="relative">
-                                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 w-4 h-4" />
-                                <input
-                                    className="w-full bg-white border border-gray-300 rounded-xl py-3 pl-10 pr-4 text-gray-900 focus:outline-none focus:border-indigo-500 transition-colors"
-                                    type="password"
-                                    name="confirmPassword"
-                                    value={formData.confirmPassword}
-                                    onChange={handleChange}
-                                    placeholder="••••••••"
-                                    required
-                                />
-                            </div>
-                        </div>
-                    </div>
-
-                    <button
-                        className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-indigo-600/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                        type="submit"
-                        disabled={loading}
-                    >
-                        {loading ? <LoadingIndicator /> : "Create Account"}
-                    </button>
-
-                    <p className="text-center text-gray-500 text-sm">
-                        Already have an account?{" "}
-                        <Link to="/login" className="text-indigo-400 hover:text-indigo-300 font-medium">
-                            Login here
-                        </Link>
-                    </p>
-                </form>
+            <div className="mb-8 z-10 animate-in fade-in slide-in-from-top-4 duration-700">
+                <Link to="/" className="flex items-center gap-1 group">
+                    <div className="w-10 h-10 bg-slate-900 rounded-xl flex items-center justify-center text-white font-bold group-hover:rotate-12 transition-transform">S</div>
+                    <span className="text-2xl font-black tracking-tight text-slate-900 uppercase">SciCon<span className="text-blue-600">.</span></span>
+                </Link>
             </div>
+
+            <Card className="w-full max-w-xl border-white/50 bg-white/80 backdrop-blur-xl shadow-2xl shadow-blue-500/10 rounded-[2rem] overflow-hidden z-10 animate-in fade-in zoom-in-95 duration-500">
+                <div className="h-2 bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600"></div>
+                <CardHeader className="text-center pt-10 pb-6">
+                    <div className="bg-blue-50 w-12 h-12 rounded-2xl flex items-center justify-center text-blue-600 mx-auto mb-4 shadow-sm ring-1 ring-blue-100">
+                        <UserPlus size={24} />
+                    </div>
+                    <CardTitle className="text-3xl font-bold text-slate-900 tracking-tight">Register</CardTitle>
+                    <CardDescription className="text-xs font-bold uppercase tracking-[0.2em] text-slate-500 mt-2">Create your professional profile</CardDescription>
+                </CardHeader>
+                <CardContent className="px-8 pb-10">
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        {error && (
+                            <div className="p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-xs font-bold uppercase tracking-tight flex items-center gap-3 animate-shake">
+                                <Sparkles size={16} className="shrink-0" />
+                                <span>{error}</span>
+                            </div>
+                        )}
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Username</Label>
+                                <Input name="username" value={formData.username} onChange={handleChange} required className="rounded-xl border-slate-200 h-11 focus:ring-blue-500" placeholder="j.smith" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Email</Label>
+                                <Input name="email" type="email" value={formData.email} onChange={handleChange} required className="rounded-xl border-slate-200 h-11 focus:ring-blue-500" placeholder="smith@research.org" />
+                            </div>
+                        </div>
+
+                        <div className="space-y-2">
+                            <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Role</Label>
+                            <select
+                                name="role"
+                                value={formData.role}
+                                onChange={handleChange}
+                                className="w-full rounded-xl border border-slate-200 bg-white h-11 px-4 text-sm font-medium focus:ring-2 focus:ring-blue-500 outline-none transition-all appearance-none cursor-pointer"
+                            >
+                                {roles.map((option) => (
+                                    <option key={option.value} value={option.value}>
+                                        {option.label}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Institution</Label>
+                                <Input name="institution" value={formData.institution} onChange={handleChange} className="rounded-xl border-slate-200 h-11 focus:ring-blue-500" placeholder="e.g. Stanford University" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Research Field</Label>
+                                <Input name="research_domain" value={formData.research_domain} onChange={handleChange} className="rounded-xl border-slate-200 h-11 focus:ring-blue-500" placeholder="e.g. Quantum Computing" />
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Password</Label>
+                                <Input name="password" type="password" value={formData.password} onChange={handleChange} required className="rounded-xl border-slate-200 h-11 focus:ring-blue-500" placeholder="••••••••" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-bold uppercase tracking-widest text-slate-400 ml-1">Confirm Password</Label>
+                                <Input name="confirmPassword" type="password" value={formData.confirmPassword} onChange={handleChange} required className="rounded-xl border-slate-200 h-11 focus:ring-blue-500" placeholder="••••••••" />
+                            </div>
+                        </div>
+
+                        <Button type="submit" className="w-full h-12 bg-slate-900 hover:bg-slate-800 text-white rounded-xl font-bold uppercase tracking-[0.2em] text-[11px] transition-all hover:shadow-lg hover:shadow-slate-900/10 active:scale-[0.98]" disabled={loading}>
+                            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Register Profile"}
+                        </Button>
+
+                        <div className="text-center pt-2">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">
+                                Existing member?{" "}
+                                <Link to="/login" className="text-blue-600 hover:underline">
+                                    Return to Login
+                                </Link>
+                            </p>
+                        </div>
+                    </form>
+                </CardContent>
+            </Card>
         </div>
     );
 }
