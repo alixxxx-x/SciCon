@@ -27,7 +27,7 @@ const SessionCard = ({ session }) => {
     };
 
     return (
-        <div className="bg-white border border-gray-200 rounded-xl p-6 shadow-sm hover:shadow-md transition-all group">
+        <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-6 shadow-sm hover:shadow-md transition-all group">
             <div className="flex justify-between items-start mb-4">
                 <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border ${getSessionTypeStyle(session.session_type)}`}>
                     {session.session_type.replace('_', ' ')}
@@ -37,7 +37,7 @@ const SessionCard = ({ session }) => {
                 </span>
             </div>
 
-            <h3 className="font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-1">
+            <h3 className="font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 transition-colors line-clamp-1">
                 {session.title}
             </h3>
 
@@ -138,8 +138,8 @@ const SessionsList = () => {
         <OrganizerSidebar userInfo={userInfo}>
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Program Sessions</h1>
-                    <p className="text-gray-500">Overview of all scheduled sessions across your events.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Program Sessions</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Overview of all scheduled sessions across your events.</p>
                 </div>
                 <button
                     onClick={() => navigate('/sessions/create')}
@@ -149,7 +149,7 @@ const SessionsList = () => {
                 </button>
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl p-4 mb-8 shadow-sm flex flex-col md:flex-row gap-4 items-center">
+            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-4 mb-8 shadow-sm flex flex-col md:flex-row gap-4 items-center">
                 <div className="relative flex-1 w-full">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
@@ -176,7 +176,7 @@ const SessionsList = () => {
             </div>
 
             {filteredSessions.length === 0 ? (
-                <div className="bg-white border border-gray-200 rounded-xl p-16 text-center">
+                <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl p-16 text-center">
                     <AlertCircle className="w-12 h-12 text-gray-300 mx-auto mb-4" />
                     <h3 className="text-lg font-bold text-gray-600">No sessions found</h3>
                     <p className="text-gray-400">Expand your search or create a new session.</p>

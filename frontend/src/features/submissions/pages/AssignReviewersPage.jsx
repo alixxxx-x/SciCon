@@ -181,8 +181,8 @@ const AssignReviewers = () => {
     return (
         <OrganizerSidebar userInfo={userInfo}>
             <div className="mb-8">
-                <h1 className="text-2xl font-bold text-gray-900">Assign Reviewers</h1>
-                <p className="text-gray-500">Pair scientific submissions with qualified committee members.</p>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Assign Reviewers</h1>
+                <p className="text-gray-500 dark:text-gray-400">Pair scientific submissions with qualified committee members.</p>
             </div>
 
             {error && (
@@ -243,8 +243,8 @@ const AssignReviewers = () => {
                                                 </td>
                                                 <td className="py-5 px-6 text-center">
                                                     <span className={`px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${sub.status === 'pending' ? 'bg-yellow-50 text-yellow-700 border-yellow-100' :
-                                                            sub.status === 'under_review' ? 'bg-blue-50 text-blue-700 border-blue-100' :
-                                                                'bg-green-50 text-green-700 border-green-100'
+                                                        sub.status === 'under_review' ? 'bg-blue-50 text-blue-700 border-blue-100' :
+                                                            'bg-green-50 text-green-700 border-green-100'
                                                         }`}>
                                                         {sub.status.replace('_', ' ')}
                                                     </span>
@@ -283,8 +283,8 @@ const AssignReviewers = () => {
                                         key={reviewer.id}
                                         onClick={() => toggleReviewerSelection(reviewer.id)}
                                         className={`p-3 rounded-lg border cursor-pointer transition-all flex items-center justify-between ${selectedReviewers.includes(reviewer.id)
-                                                ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500'
-                                                : 'border-gray-100 hover:border-gray-300'
+                                            ? 'border-indigo-500 bg-indigo-50/50 ring-1 ring-indigo-500'
+                                            : 'border-gray-100 hover:border-gray-300'
                                             }`}
                                     >
                                         <div className="flex items-center gap-3">

@@ -1,7 +1,24 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/api";
-import { User, Mail, Building, Globe, Phone, FileText, ArrowLeft, Loader2, Shield, Calendar, Clock, Award } from "lucide-react";
+import {
+    User,
+    Mail,
+    Building,
+    Globe,
+    Phone,
+    FileText,
+    Shield,
+    Calendar,
+    Award,
+    Loader2,
+    Settings
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 export default function Profile() {
     const [profile, setProfile] = useState(null);
@@ -33,128 +50,139 @@ export default function Profile() {
     if (!profile) {
         return (
             <div className="min-h-[60vh] flex flex-col items-center justify-center bg-white text-center px-4">
-                <p className="text-xl text-gray-400 mb-4 font-medium">Unable to retrieve profile information.</p>
-                <button
-                    onClick={() => navigate('/')}
-                    className="px-8 py-3 bg-blue-600 text-white rounded-xl font-bold shadow-lg shadow-blue-600/20"
-                >
+                <p className="text-xl text-slate-400 mb-6 font-medium">Unable to load profile data.</p>
+                <Button variant="default" onClick={() => navigate('/')} className="rounded-lg h-11 px-8 font-medium">
                     Return Home
-                </button>
+                </Button>
             </div>
         );
     }
 
     return (
-        <div className="bg-white min-h-screen">
-            {/* Header / Banner Area */}
-            <div className="bg-gray-50 border-b border-gray-100 py-12">
-                <div className="max-w-5xl mx-auto px-6">
+        <div className="bg-slate-50 min-h-screen py-16 px-4 md:px-6">
+            <div className="max-w-4xl mx-auto">
+                {/* Profile Header */}
+                <div className="bg-white rounded-2xl border border-slate-200 p-8 mb-8 shadow-sm">
                     <div className="flex flex-col md:flex-row items-center gap-8">
-                        <div className="w-32 h-32 rounded-3xl bg-blue-600 shadow-2xl flex items-center justify-center text-4xl font-black text-white transform -rotate-3">
-                            {profile.username?.charAt(0).toUpperCase()}
-                        </div>
-                        <div className="text-center md:text-left">
-                            <h1 className="text-3xl md:text-4xl font-black text-gray-900 mb-2">{profile.username}</h1>
-                            <div className="flex flex-wrap justify-center md:justify-start gap-4 text-sm font-bold">
-                                <span className="bg-blue-50 text-blue-600 px-4 py-1.5 rounded-full uppercase tracking-widest border border-blue-100 flex items-center gap-2">
-                                    <Shield size={14} /> {profile.role?.replace('_', ' ')}
-                                </span>
-                                <span className="text-gray-400 flex items-center gap-2">
-                                    <Calendar size={16} /> Joined {new Date(profile.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}
-                                </span>
+                        <Avatar className="w-32 h-32 border-4 border-white shadow-lg ring-1 ring-slate-100 flex items-center justify-center text-4xl overflow-hidden">
+                            {profile.photo && (
+                                <img src={profile.photo} alt={profile.username} className="w-full h-full object-cover" />
+                            )}
+                            <AvatarFallback className="bg-blue-600 text-white font-medium">
+                                {profile.username?.charAt(0).toUpperCase()}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="text-center md:text-left flex-grow">
+                            <h1 className="text-3xl font-medium text-slate-900 mb-2">{profile.username}</h1>
+                            <div className="flex flex-wrap justify-center md:justify-start gap-3 items-center">
+                                <Badge className="bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium text-xs px-3 py-1">
+                                    {profile.role?.replace('_', ' ')}
+                                </Badge>
+                                <div className="flex items-center gap-2 text-slate-400 text-sm font-medium">
+                                    <Calendar className="w-4 h-4" />
+                                    <span>
+                                        {profile.created_at
+                                            ? `Joined ${new Date(profile.created_at).toLocaleDateString(undefined, { month: 'long', year: 'numeric' })}`
+                                            : 'Member since 2025'
+                                        }
+                                    </span>
+                                </div>
                             </div>
                         </div>
-                        <div className="md:ml-auto">
-                            <button
-                                onClick={() => navigate('/settings')}
-                                className="px-8 py-3.5 bg-gray-900 hover:bg-black text-white rounded-2xl font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-gray-900/10 active:scale-95"
-                            >
-                                Update Account
-                            </button>
-                        </div>
+                        <Button
+                            variant="outline"
+                            onClick={() => navigate('/settings')}
+                            className="rounded-lg h-11 px-6 font-medium border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center gap-2"
+                        >
+                            <Settings className="w-4 h-4" />
+                            Settings
+                        </Button>
                     </div>
                 </div>
-            </div>
 
-            {/* Main Content Area */}
-            <div className="max-w-5xl mx-auto px-6 py-12">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-
-                    {/* Left Sidebar Info */}
-                    <div className="lg:col-span-4 space-y-8">
-                        <div>
-                            <h3 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4">Quick Stats</h3>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="bg-white border border-gray-100 p-4 rounded-2xl">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Status</p>
-                                    <p className="text-sm font-bold text-green-600">Active</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* Sidebar Stats / Quick Info */}
+                    <div className="space-y-6">
+                        <Card className="border-slate-200 shadow-sm rounded-xl overflow-hidden">
+                            <CardHeader className="bg-slate-50/50 pb-4">
+                                <CardTitle className="text-xs font-medium text-slate-400">Contact Information</CardTitle>
+                            </CardHeader>
+                            <CardContent className="pt-6 space-y-4">
+                                <div className="flex flex-col">
+                                    <span className="text-xs font-medium text-slate-500 mb-1">Email Address</span>
+                                    <span className="text-sm font-medium text-slate-900 break-all flex items-center gap-2">
+                                        <Mail className="w-3.5 h-3.5 text-blue-500" />
+                                        {profile.email}
+                                    </span>
                                 </div>
-                                <div className="bg-white border border-gray-100 p-4 rounded-2xl">
-                                    <p className="text-[10px] font-black text-gray-400 uppercase mb-1">Verified</p>
-                                    <p className="text-sm font-bold text-blue-600">Yes</p>
-                                </div>
-                            </div>
-                        </div>
+                                {profile.phone && (
+                                    <div className="flex flex-col">
+                                        <span className="text-xs font-medium text-slate-500 mb-1">Phone Number</span>
+                                        <span className="text-sm font-medium text-slate-900 flex items-center gap-2">
+                                            <Phone className="w-3.5 h-3.5 text-blue-500" />
+                                            {profile.phone}
+                                        </span>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
 
-                        <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100/50">
-                            <h4 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
-                                <Mail size={16} className="text-blue-600" /> Contact Info
-                            </h4>
-                            <p className="text-sm font-medium text-blue-800 break-all">{profile.email}</p>
-                            {profile.phone && (
-                                <p className="text-sm font-medium text-blue-800 mt-2 flex items-center gap-2">
-                                    <Phone size={14} /> {profile.phone}
-                                </p>
-                            )}
+                        <div className="bg-blue-600 rounded-xl p-6 text-white shadow-blue-600/10 shadow-xl">
+                            <Shield className="w-10 h-10 mb-4 opacity-30" />
+                            <h4 className="font-medium text-lg mb-1 text-white">Verified Researcher</h4>
+                            <p className="text-blue-100 text-sm opacity-90 leading-relaxed font-medium">
+                                Your account is certified for participation in Algiers' medical conferences.
+                            </p>
                         </div>
                     </div>
 
-                    {/* Full Professional Details */}
-                    <div className="lg:col-span-8 space-y-12">
-                        <section>
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="p-2 bg-gray-100 rounded-lg text-gray-500">
-                                    <FileText size={20} />
+                    {/* Main Professional Info */}
+                    <div className="md:col-span-2 space-y-8">
+                        <Card className="border-slate-200 shadow-sm rounded-xl overflow-hidden">
+                            <CardHeader className="border-b border-slate-50 pb-6">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                                        <FileText className="w-5 h-5" />
+                                    </div>
+                                    <CardTitle className="text-xl font-medium text-slate-900">Professional Details</CardTitle>
                                 </div>
-                                <h2 className="text-xl font-bold text-gray-900">Professional Profile</h2>
-                            </div>
+                            </CardHeader>
+                            <CardContent className="pt-8 grid grid-cols-1 sm:grid-cols-2 gap-8">
+                                <div className="space-y-1">
+                                    <span className="text-xs font-medium text-slate-500">Institution</span>
+                                    <div className="flex items-center gap-2.5 text-slate-900 font-medium text-lg">
+                                        <Building className="w-4 h-4 text-slate-400" />
+                                        {profile.institution || "Not provided"}
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <span className="text-xs font-medium text-slate-500">Research Expertise</span>
+                                    <div className="flex items-center gap-2.5 text-slate-900 font-medium text-lg">
+                                        <Award className="w-4 h-4 text-slate-400" />
+                                        {profile.research_domain || "General Medicine"}
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <span className="text-xs font-medium text-slate-500">Location</span>
+                                    <div className="flex items-center gap-2.5 text-slate-900 font-medium text-lg">
+                                        <Globe className="w-4 h-4 text-slate-400" />
+                                        {profile.country || "Algeria"}
+                                    </div>
+                                </div>
+                                <div className="space-y-1">
+                                    <span className="text-xs font-medium text-slate-500">Department</span>
+                                    <div className="flex items-center gap-2.5 text-slate-900 font-medium text-lg">
+                                        <User className="w-4 h-4 text-slate-400" />
+                                        Medical Science
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-10 gap-x-12">
-                                <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Primary Institution</label>
-                                    <p className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                        <Building size={18} className="text-blue-500/50" />
-                                        {profile.institution || "Not specified"}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Research Expertise</label>
-                                    <p className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                        <Award size={18} className="text-blue-500/50" />
-                                        {profile.research_domain || "General Science"}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Location / Country</label>
-                                    <p className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                        <Globe size={18} className="text-blue-500/50" />
-                                        {profile.country || "Not specified"}
-                                    </p>
-                                </div>
-                                <div>
-                                    <label className="block text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">Phone</label>
-                                    <p className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                        <Phone size={18} className="text-blue-500/50" />
-                                        {profile.phone || "Not provided"}
-                                    </p>
-                                </div>
-                            </div>
-                        </section>
-
-                        <section className="bg-gray-50 rounded-3xl p-8 border border-gray-100">
-                            <h3 className="text-sm font-black text-gray-400 uppercase tracking-widest mb-4">Professional Biography</h3>
-                            <p className="text-gray-600 leading-relaxed italic text-lg">
-                                "{profile.bio || "Hello! I am a researcher dedicated to advancing scientific knowledge. Welcome to my profile."}"
+                        <section className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+                            <h3 className="text-xs font-medium text-slate-400 mb-6 border-l-2 border-blue-600 pl-3">Professional Biography</h3>
+                            <p className="text-slate-600 leading-relaxed text-lg italic font-medium">
+                                "{profile.bio || "No biography provided. This user is a dedicated member of the Algerian scientific community."}"
                             </p>
                         </section>
                     </div>

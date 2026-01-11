@@ -1,65 +1,70 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import api from '../../../services/api';
+import OrganizerSidebar from '../../../components/layout/OrganizerSidebar';
 import {
     Calendar,
     Users,
     TrendingUp,
     Plus,
-    AlertTriangle,
-    Trash2,
     ChevronRight,
+    Trash2,
+    AlertTriangle,
     ClipboardList,
     Loader2
 } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
-import api from '../../../services/api';
-import OrganizerSidebar from '../../../components/layout/OrganizerSidebar';
 
 const StatCard = ({ title, value, icon: Icon, colorClass }) => (
-    <div className="bg-white border border-gray-200 p-6 rounded-xl shadow-sm">
+    <div className="bg-white border border-gray-200 rounded-xl p-5 shadow-sm">
         <div className="flex items-center justify-between">
             <div>
-                <p className="text-sm font-medium text-gray-500 mb-1">{title}</p>
-                <p className="text-2xl font-bold text-gray-900">{value}</p>
+                <p className="text-sm font-medium text-gray-500">{title}</p>
+                <p className="text-2xl font-bold text-gray-900 mt-1">{value}</p>
             </div>
             <div className={`p-3 rounded-lg ${colorClass}`}>
-                <Icon size={24} />
+                <Icon size={22} />
             </div>
         </div>
     </div>
 );
 
+const getStatusStyle = (status) => {
+    switch (status) {
+        case 'open_call': return 'bg-green-100 text-green-700';
+        case 'draft': return 'bg-gray-100 text-gray-600';
+        case 'ongoing': return 'bg-blue-100 text-blue-700';
+        case 'program_ready': return 'bg-purple-100 text-purple-700';
+        case 'completed': return 'bg-slate-100 text-slate-600';
+        default: return 'bg-gray-100 text-gray-600';
+    }
+};
+
 const EventRow = ({ event, onDelete }) => {
     const navigate = useNavigate();
-
-    const getStatusStyle = (status) => {
-        switch (status) {
-            case 'open_call': return 'bg-green-100 text-green-700';
-            case 'draft': return 'bg-gray-100 text-gray-700';
-            case 'completed': return 'bg-blue-100 text-blue-700';
-            case 'ongoing': return 'bg-purple-100 text-purple-700';
-            case 'program_ready': return 'bg-blue-100 text-blue-700';
-            default: return 'bg-yellow-100 text-yellow-700';
-        }
-    };
-
     return (
-        <tr className="hover:bg-gray-50 transition-colors border-b border-gray-100 last:border-0 group">
-            <td className="py-4 px-4 font-semibold text-gray-900">{event.title}</td>
+        <tr
+            className="border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer"
+            onClick={() => navigate(`/events/${event.id}`)}
+        >
             <td className="py-4 px-4">
-                <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase ${getStatusStyle(event.status)}`}>
-                    {event.status.replace('_', ' ')}
+                <p className="font-semibold text-gray-900">{event.title}</p>
+                <p className="text-sm text-gray-500">{event.location || 'No location'}</p>
+            </td>
+            <td className="py-4 px-4">
+                <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${getStatusStyle(event.status)}`}>
+                    {event.status?.replace('_', ' ').toUpperCase() || 'DRAFT'}
                 </span>
             </td>
-            <td className="py-4 px-4 text-sm text-gray-600">
-                {new Date(event.start_date).toLocaleDateString()}
+            <td className="py-4 px-4 text-gray-600">
+                {event.start_date ? new Date(event.start_date).toLocaleDateString() : '—'}
             </td>
-            <td className="py-4 px-4 text-center font-bold text-gray-700">
-                {event.real_participants_count || 0}
+            <td className="py-4 px-4 text-center font-semibold text-gray-700">
+                {event.real_participants_count ?? 0}
             </td>
             <td className="py-4 px-4 text-right">
-                <div className="flex items-center justify-end gap-2">
+                <div className="flex items-center justify-end gap-1" onClick={(e) => e.stopPropagation()}>
                     <button
-                        onClick={() => navigate(`/events/${event.id}/edit`)}
+                        onClick={() => navigate(`/events/${event.id}`)}
                         className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                     >
                         <ChevronRight size={18} />
@@ -104,8 +109,6 @@ const DashboardOrganizer = () => {
             const eventsData = myEventsRes.data;
             let allEvents = Array.isArray(eventsData) ? eventsData : (eventsData.results || []);
 
-            // Since the backend list view doesn't provide participants count, 
-            // we fetch registrations for each event to calculate real stats.
             const participantsPromises = allEvents.map(e => api.get(`/api/events/${e.id}/registrations/`));
             const participantsResponses = await Promise.all(participantsPromises);
 
@@ -126,7 +129,7 @@ const DashboardOrganizer = () => {
                 totalEvents,
                 activeEvents,
                 totalParticipants: totalParticipantsCount,
-                pendingApprovals: 8 // Placeholder
+                pendingApprovals: 8
             });
             setRecentEvents(allEvents.slice(0, 5));
         } catch (error) {
@@ -163,8 +166,8 @@ const DashboardOrganizer = () => {
         <OrganizerSidebar userInfo={userInfo}>
             <div className="mb-8 flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-bold text-gray-900">Organizer Dashboard</h1>
-                    <p className="text-gray-500">Manage your events, sessions and participants.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Manage your events, sessions and participants.</p>
                 </div>
                 <div className="flex gap-3">
                     <button
@@ -175,14 +178,13 @@ const DashboardOrganizer = () => {
                     </button>
                     <button
                         onClick={() => navigate('/sessions/create')}
-                        className="flex items-center gap-2 bg-white border border-gray-200 text-gray-700 px-4 py-2.5 rounded-lg font-bold hover:bg-gray-50 transition-colors shadow-sm"
+                        className="flex items-center gap-2 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 text-gray-700 dark:text-gray-200 px-4 py-2.5 rounded-lg font-bold hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors shadow-sm"
                     >
                         <ClipboardList size={18} /> Mix Session
                     </button>
                 </div>
             </div>
 
-            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <StatCard
                     title="Total Events"
@@ -210,14 +212,14 @@ const DashboardOrganizer = () => {
                 />
             </div>
 
-            <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
-                <div className="p-5 border-b border-gray-100 flex items-center justify-between">
-                    <h3 className="font-bold text-gray-900">Recent Events</h3>
+            <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
+                <div className="p-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                    <h3 className="font-bold text-gray-900 dark:text-white">Recent Events</h3>
                     <Link to="/events" className="text-sm font-semibold text-blue-600 hover:underline">View All</Link>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50 text-gray-500 text-[11px] font-black uppercase tracking-wider border-b border-gray-100">
+                        <thead className="bg-gray-50 dark:bg-slate-900 text-gray-500 dark:text-gray-400 text-xs font-semibold uppercase border-b border-gray-100 dark:border-slate-700">
                             <tr>
                                 <th className="py-3 px-4">Event Title</th>
                                 <th className="py-3 px-4">Status</th>
@@ -226,7 +228,7 @@ const DashboardOrganizer = () => {
                                 <th className="py-3 px-4 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className="dark:text-gray-300">
                             {recentEvents.length > 0 ? (
                                 recentEvents.map(event => (
                                     <EventRow key={event.id} event={event} onDelete={handleDelete} />

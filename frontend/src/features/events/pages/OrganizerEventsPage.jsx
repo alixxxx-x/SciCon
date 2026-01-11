@@ -52,8 +52,8 @@ const OrganizerEvents = () => {
         <OrganizerSidebar userInfo={userInfo}>
             <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6">
                 <div>
-                    <h1 className="text-3xl font-black text-gray-900 mb-2">My Events</h1>
-                    <p className="text-gray-500 font-medium">Manage and monitor the progress of your scientific conferences.</p>
+                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">My Events</h1>
+                    <p className="text-gray-500 dark:text-gray-400">Manage and monitor the progress of your scientific conferences.</p>
                 </div>
 
             </div>
@@ -74,7 +74,7 @@ const OrganizerEvents = () => {
                 </div>
 
                 {/* Events Grid/List */}
-                <div className="bg-white border border-gray-100 rounded-3xl shadow-sm overflow-hidden min-h-[400px]">
+                <div className="bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden min-h-[400px]">
                     {loading ? (
                         <div className="py-32 flex flex-col items-center justify-center">
                             <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
@@ -83,7 +83,7 @@ const OrganizerEvents = () => {
                     ) : filteredEvents.length > 0 ? (
                         <div className="overflow-x-auto">
                             <table className="w-full text-left">
-                                <thead className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] border-b border-gray-50">
+                                <thead className="bg-gray-50 dark:bg-slate-900 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase border-b border-gray-100 dark:border-slate-700">
                                     <tr>
                                         <th className="py-5 px-8">Conference Title</th>
                                         <th className="py-5 px-6">Event Date</th>
@@ -101,8 +101,8 @@ const OrganizerEvents = () => {
                                                         <FileText size={20} />
                                                     </div>
                                                     <div>
-                                                        <p className="font-bold text-gray-900 text-base">{event.title}</p>
-                                                        <p className="text-xs text-gray-400 font-medium">{event.event_type}</p>
+                                                        <p className="font-semibold text-gray-900 dark:text-white">{event.title}</p>
+                                                        <p className="text-xs text-gray-500 dark:text-gray-400">{event.event_type}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -119,8 +119,8 @@ const OrganizerEvents = () => {
                                             </td>
                                             <td className="py-6 px-6">
                                                 <div className="flex flex-col items-center">
-                                                    <span className="text-sm font-black text-gray-900">{event.participants_count || 0}</span>
-                                                    <span className="text-[9px] font-bold text-gray-300 uppercase tracking-tighter">Delegates</span>
+                                                    <span className="text-sm font-bold text-gray-900 dark:text-white">{event.participants_count || 0}</span>
+                                                    <span className="text-xs text-gray-400">Delegates</span>
                                                 </div>
                                             </td>
                                             <td className="py-6 px-8 text-right">
