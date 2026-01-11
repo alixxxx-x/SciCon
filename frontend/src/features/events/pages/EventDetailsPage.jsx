@@ -29,14 +29,15 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 
+import { useToast } from "@/hooks/use-toast";
+
 const EventDetails = () => {
+    const { toast } = useToast();
     const { id } = useParams();
     const navigate = useNavigate();
     const [event, setEvent] = useState(null);
     const [loading, setLoading] = useState(true);
     const [registering, setRegistering] = useState(false);
-    const [error, setError] = useState(null);
-    const [success, setSuccess] = useState(false);
     const [userInfo, setUserInfo] = useState(null);
     const [registrationData, setRegistrationData] = useState({
         registration_type: 'participant',
@@ -58,26 +59,47 @@ const EventDetails = () => {
             setUserInfo(profileRes.data);
         } catch (error) {
             console.error("Error fetching event details:", error);
-            setError("Failed to load event details. Please try again later.");
+            toast({
+                variant: "destructive",
+                title: "Load Error",
+                description: "Failed to load event details. Please try again later.",
+            });
         } finally {
             setLoading(false);
         }
     };
 
     const handleRegister = async () => {
-        if (event?.status !== 'program_ready') return;
+        const canRegister = ['open_call', 'ongoing', 'program_ready'].includes(event?.status);
+        if (!canRegister) {
+            toast({
+                variant: "destructive",
+                title: "Registration Closed",
+                description: "This event is currently not accepting registrations.",
+            });
+            return;
+        }
+
         setRegistering(true);
-        setError(null);
         try {
             await api.post(`/api/events/${id}/registrations/`, registrationData);
-            setSuccess(true);
+
+            toast({
+                title: "Registration Successful",
+                description: `You have successfully registered for ${event.title}.`,
+            });
+
             setTimeout(() => {
                 const role = userInfo?.role;
                 navigate(role === 'organizer' ? '/dashboard-organizer' : (role === 'author' ? '/dashboard-author' : '/dashboard'));
-            }, 2000);
+            }, 1500);
         } catch (err) {
             console.error("Error registering for event:", err);
-            setError(err.response?.data?.detail || "Registration failed. Please try again.");
+            toast({
+                variant: "destructive",
+                title: "Registration Failed",
+                description: err.response?.data?.detail || "We couldn't process your registration. Try again.",
+            });
         } finally {
             setRegistering(false);
         }
@@ -130,21 +152,7 @@ const EventDetails = () => {
         );
     }
 
-    if (success) {
-        return (
-            <div className="min-h-screen flex items-center justify-center bg-slate-50/50 px-4 font-sans">
-                <Card className="max-w-md w-full border-slate-200 text-center p-12 shadow-sm rounded-2xl bg-white">
-                    <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                        <CheckCircle className="w-8 h-8 text-blue-600" />
-                    </div>
-                    <CardTitle className="text-2xl font-medium text-slate-900 mb-2">Registration Successful</CardTitle>
-                    <p className="text-slate-500 font-medium text-sm">Redirecting you to your personal dashboard...</p>
-                </Card>
-            </div>
-        );
-    }
-
-    const isProgramReady = event.status === 'program_ready';
+    const canRegister = ['open_call', 'ongoing', 'program_ready'].includes(event.status);
 
     return (
         <div className="min-h-screen bg-slate-50/30 text-slate-900 font-sans selection:bg-blue-100 selection:text-blue-900">
@@ -193,14 +201,14 @@ const EventDetails = () => {
                             </p>
                         </section>
 
-                        {event.sessions?.length > 0 && (
+                        {event.sessions?.filter(s => s.submissions_count > 0).length > 0 && (
                             <section className="space-y-6">
                                 <div className="flex items-center justify-between px-2">
                                     <h2 className="text-xs font-medium text-slate-400 uppercase tracking-widest">Program Schedule</h2>
-                                    <span className="text-[10px] font-medium text-slate-300 uppercase tracking-widest">{event.sessions.length} Sessions</span>
+                                    <span className="text-[10px] font-medium text-slate-300 uppercase tracking-widest">{event.sessions.filter(s => s.submissions_count > 0).length} Sessions</span>
                                 </div>
                                 <div className="grid gap-4">
-                                    {event.sessions.map((session, idx) => (
+                                    {event.sessions.filter(s => s.submissions_count > 0).map((session, idx) => (
                                         <div key={idx} className="bg-white p-6 md:p-8 rounded-xl border border-slate-200 shadow-sm group hover:border-blue-200 transition-colors">
                                             <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
                                                 <div className="space-y-4">
@@ -269,12 +277,12 @@ const EventDetails = () => {
 
                                         <Button
                                             onClick={handleRegister}
-                                            disabled={registering || !isProgramReady}
+                                            disabled={registering || !canRegister}
                                             className="w-full h-11 rounded-lg text-sm font-medium bg-blue-600 hover:bg-blue-700 text-white shadow-sm transition-all disabled:bg-slate-100 disabled:text-slate-400"
                                         >
                                             {registering ? (
                                                 <Loader2 className="animate-spin mr-2" size={16} />
-                                            ) : !isProgramReady ? (
+                                            ) : !canRegister ? (
                                                 <span className="flex items-center gap-2"><Lock size={16} /> Registration Closed</span>
                                             ) : (
                                                 "Confirm Registration"

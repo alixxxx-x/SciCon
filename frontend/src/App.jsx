@@ -33,6 +33,8 @@ import DashboardParticipant from "./features/dashboard/pages/ParticipantDashboar
 import DashboardReviewer from "./features/dashboard/pages/ReviewerDashboard";
 import NewSubmission from "./features/submissions/pages/NewSubmissionPage";
 import AssignReviewers from "./features/submissions/pages/AssignReviewersPage";
+import { Toaster } from "./components/ui/toaster";
+import NotificationListener from "./components/NotificationListener";
 import "./styles/global.css";
 
 function Logout() {
@@ -50,6 +52,7 @@ function App() {
     return (
         <ThemeProvider defaultTheme="light" storageKey="scicon-theme">
             <BrowserRouter>
+                <NotificationListener />
                 <Routes>
                     <Route path="/" element={<ProtectedRoutes><Layout><Home /></Layout></ProtectedRoutes>} />
                     <Route path="/login" element={<Login />} />
@@ -87,6 +90,7 @@ function App() {
                     <Route path="/settings" element={<ProtectedRoutes><Layout><Settings /></Layout></ProtectedRoutes>} />
                     <Route path="/notifications" element={<ProtectedRoutes><Layout><Notifications /></Layout></ProtectedRoutes>} />
                 </Routes>
+                <Toaster />
             </BrowserRouter>
         </ThemeProvider>
     )

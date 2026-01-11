@@ -1,9 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Users, ChevronRight, Mail, Phone, Calendar, ArrowLeft, Loader2, Download, Filter, Check, CreditCard, Clock, MoreHorizontal } from 'lucide-react';
+import {
+    Search,
+    Users,
+    ChevronRight,
+    Mail,
+    Calendar,
+    ArrowLeft,
+    RefreshCw,
+    Download,
+    Check,
+    CreditCard,
+    Clock,
+    FileSpreadsheet
+} from 'lucide-react';
 import api from '../../../services/api';
 import OrganizerSidebar from '../../../components/layout/OrganizerSidebar';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
 
 const OrganizerParticipants = () => {
+    const { toast } = useToast();
     const [events, setEvents] = useState([]);
     const [selectedEvent, setSelectedEvent] = useState(null);
     const [participants, setParticipants] = useState([]);
@@ -12,6 +31,7 @@ const OrganizerParticipants = () => {
     const [updatingId, setUpdatingId] = useState(null);
     const [userInfo, setUserInfo] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
 
     useEffect(() => {
         fetchInitialData();
@@ -42,6 +62,10 @@ const OrganizerParticipants = () => {
             const res = await api.get(`/api/events/${event.id}/registrations/`);
             const data = res.data;
             setParticipants(Array.isArray(data) ? data : (data.results || []));
+            toast({
+                title: "Data loaded",
+                description: `Participant list for ${event.title} is now visible.`,
+            });
         } catch (error) {
             console.error("Error fetching participants:", error);
             setParticipants([]);
@@ -55,9 +79,17 @@ const OrganizerParticipants = () => {
         try {
             await api.patch(`/api/registrations/${regId}/payment/`, { payment_status: status });
             setParticipants(prev => prev.map(p => p.id === regId ? { ...p, payment_status: status } : p));
+            toast({
+                title: "Status updated",
+                description: `Payment status changed to ${status.replace('_', ' ')}.`,
+            });
         } catch (error) {
             console.error("Error updating payment status:", error);
-            alert("Failed to update status. Please try again.");
+            toast({
+                variant: "destructive",
+                title: "Update failed",
+                description: "There was an error updating the payment status.",
+            });
         } finally {
             setUpdatingId(null);
         }
@@ -66,217 +98,276 @@ const OrganizerParticipants = () => {
     const handleBack = () => {
         setSelectedEvent(null);
         setParticipants([]);
+        setSearchTerm('');
+        setStatusFilter('all');
     };
 
-    const filteredParticipants = participants.filter(p =>
-        p.user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.user?.email?.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const handleExportCSV = () => {
+        if (!participants.length) return;
+
+        const headers = ['Order', 'Username', 'Email', 'Institution', 'Type', 'Status', 'Date Registered'];
+        const rows = filteredParticipants.map((p, idx) => [
+            idx + 1,
+            p.user?.username || '',
+            p.user?.email || '',
+            p.user?.institution || 'N/A',
+            p.registration_type,
+            p.payment_status,
+            new Date(p.registered_at).toLocaleDateString()
+        ]);
+
+        const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        const url = URL.createObjectURL(blob);
+        link.setAttribute("href", url);
+        link.setAttribute("download", `participants_${(selectedEvent?.title || "event")}.csv`);
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const filteredParticipants = participants.filter(p => {
+        const matchesSearch = (
+            p.user?.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.user?.institution?.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+        const matchesStatus = statusFilter === 'all' || p.payment_status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
 
     const getPaymentBadge = (status) => {
         switch (status) {
             case 'completed':
             case 'paid_online':
-                return 'bg-green-50 text-green-700 border-green-100';
+                return 'bg-green-100 text-green-700 border-green-200';
             case 'paid_onsite':
-                return 'bg-blue-50 text-blue-700 border-blue-100';
+                return 'bg-blue-100 text-blue-700 border-blue-200';
             case 'pending':
             default:
-                return 'bg-orange-50 text-orange-700 border-orange-100';
+                return 'bg-amber-100 text-amber-700 border-amber-200';
         }
     };
 
     if (loading) {
         return (
-            <div className="flex h-screen items-center justify-center bg-gray-50">
-                <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
-            </div>
+            <OrganizerSidebar userInfo={userInfo}>
+                <div className="flex bg-slate-50 min-h-[60vh] items-center justify-center rounded-2xl border border-slate-200">
+                    <RefreshCw className="w-6 h-6 text-slate-400 animate-spin" />
+                </div>
+            </OrganizerSidebar>
         );
     }
 
     return (
         <OrganizerSidebar userInfo={userInfo}>
-            <div className="mb-8">
-                {selectedEvent ? (
-                    <button
+            <div className="mb-6">
+                {selectedEvent && (
+                    <Button
+                        variant="ghost"
                         onClick={handleBack}
-                        className="flex items-center gap-2 text-gray-500 hover:text-blue-600 transition-colors mb-4 text-sm font-semibold"
+                        className="flex items-center gap-2 text-slate-500 hover:text-slate-900 mb-4 px-0 h-auto"
                     >
-                        <ArrowLeft size={16} /> Back to Event Selection
-                    </button>
-                ) : null}
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <ArrowLeft size={16} /> <span className="text-sm font-medium">Back to Events</span>
+                    </Button>
+                )}
+
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-2xl font-bold text-gray-900">
-                            {selectedEvent ? `Participants: ${selectedEvent.title}` : 'Participant Management'}
+                        <h1 className="text-2xl font-bold text-slate-900 mb-1">
+                            {selectedEvent ? selectedEvent.title : "Participants"}
                         </h1>
-                        <p className="text-gray-500">
+                        <p className="text-sm text-slate-500">
                             {selectedEvent
-                                ? `Manage delegate registrations and Verify payments.`
-                                : 'Overview of attendance and registration status across your events.'}
+                                ? "Manage registrations and payment status for this event."
+                                : "Select an event to manage its participant list."}
                         </p>
                     </div>
                 </div>
             </div>
 
             {!selectedEvent ? (
-                /* Event Selection Grid */
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {events.length > 0 ? (
                         events.map(event => (
-                            <div key={event.id} className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div className="p-3 bg-blue-50 rounded-xl text-blue-600">
-                                        <Calendar size={20} />
+                            <Card key={event.id} className="hover:border-slate-400 transition-all border-slate-200 shadow-sm">
+                                <CardHeader className="pb-3">
+                                    <div className="flex justify-between items-start">
+                                        <div className="p-2 bg-slate-100 rounded-lg">
+                                            <Calendar size={18} className="text-slate-600" />
+                                        </div>
+                                        <Badge variant="outline" className="text-[10px] font-semibold">
+                                            {event.status?.replace('_', ' ')}
+                                        </Badge>
                                     </div>
-                                    <span className={`text-[10px] font-black px-2 py-1 rounded-full uppercase tracking-wider ${event.status === 'open_call' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
-                                        }`}>
-                                        {event.status.replace('_', ' ')}
-                                    </span>
-                                </div>
-                                <h3 className="text-lg font-bold text-gray-900 mb-2 truncate group-hover:text-blue-600 transition-colors">{event.title}</h3>
-                                <div className="space-y-3 mb-6">
-                                    <div className="flex items-center justify-between text-xs">
-                                        <span className="text-gray-400 font-bold uppercase tracking-widest">Total Delegates</span>
-                                        <span className="font-black text-gray-900">{event.participants_count || 0}</span>
+                                    <CardTitle className="text-base font-bold mt-4 leading-snug">{event.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="flex items-center justify-between text-sm mb-6">
+                                        <span className="text-slate-500">Participants</span>
+                                        <span className="font-semibold">{event.registrations_count || 0}</span>
                                     </div>
-                                    <div className="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
-                                        <div className="bg-blue-600 h-full rounded-full" style={{ width: `${Math.min((event.participants_count / 100) * 100, 100)}%` }}></div>
-                                    </div>
-                                </div>
-                                <button
-                                    onClick={() => fetchEventParticipants(event)}
-                                    className="w-full py-3 bg-gray-50 hover:bg-blue-600 hover:text-white border border-gray-100 rounded-xl text-sm font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2"
-                                >
-                                    Delegate List <ChevronRight size={16} />
-                                </button>
-                            </div>
+                                    <Button
+                                        onClick={() => fetchEventParticipants(event)}
+                                        className="w-full h-10 bg-white border border-slate-200 text-slate-900 hover:bg-slate-50 rounded-lg text-sm font-semibold flex items-center justify-center gap-2"
+                                    >
+                                        View Participants <ChevronRight size={16} />
+                                    </Button>
+                                </CardContent>
+                            </Card>
                         ))
                     ) : (
-                        <div className="col-span-full py-20 text-center bg-white border border-gray-200 rounded-2xl">
-                            <Users size={48} className="mx-auto text-gray-200 mb-4" />
-                            <p className="text-gray-400 font-bold">No events created yet.</p>
+                        <div className="col-span-full py-16 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl">
+                            <Users size={32} className="mx-auto text-slate-300 mb-3" />
+                            <p className="text-slate-500 text-sm">No events found.</p>
                         </div>
                     )}
                 </div>
             ) : (
-                /* Participant List View */
                 <div className="space-y-6">
-                    <div className="flex flex-col md:flex-row gap-4">
-                        <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <div className="flex flex-col md:flex-row gap-4 items-center">
+                        <div className="relative flex-1 w-full">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={16} />
                             <input
                                 type="text"
-                                placeholder="Search delegates by name or email..."
+                                placeholder="Search by name, email or institution..."
                                 value={searchTerm}
                                 onChange={(e) => setSearchTerm(e.target.value)}
-                                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl outline-none focus:border-blue-500 shadow-sm"
+                                className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-lg outline-none focus:border-slate-400 transition-all text-sm"
                             />
                         </div>
-                        <button className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-xl font-bold text-gray-600 hover:bg-gray-50 transition-colors">
-                            <Filter size={18} /> Filter Status
-                        </button>
-                        <button className="flex items-center gap-2 px-6 py-3 bg-gray-900 text-white rounded-xl font-bold hover:bg-black transition-colors">
-                            <Download size={18} /> Export CSV
-                        </button>
+                        <div className="flex gap-3 w-full md:w-auto">
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value)}
+                                className="pl-3 pr-8 h-10 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 outline-none focus:border-slate-400 transition-all cursor-pointer min-w-[140px]"
+                            >
+                                <option value="all">All Status</option>
+                                <option value="pending">Pending</option>
+                                <option value="paid_onsite">Paid Onsite</option>
+                                <option value="paid_online">Paid Online</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                            <Button
+                                onClick={handleExportCSV}
+                                variant="outline"
+                                className="h-10 px-4 flex items-center gap-2 text-sm"
+                            >
+                                <Download size={16} /> Export
+                            </Button>
+                        </div>
                     </div>
 
-                    <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                    <Card className="border-slate-200 shadow-sm overflow-hidden">
                         {loadingParticipants ? (
                             <div className="py-20 text-center">
-                                <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-2" />
-                                <p className="text-gray-400 font-medium">Retrieving delegates...</p>
+                                <RefreshCw className="w-8 h-8 text-slate-300 animate-spin mx-auto mb-3" />
+                                <p className="text-slate-500 text-sm">Loading participants...</p>
                             </div>
                         ) : (
-                            <table className="w-full text-left">
-                                <thead className="bg-gray-50 text-gray-400 text-[10px] font-black uppercase tracking-widest border-b border-gray-100">
-                                    <tr>
-                                        <th className="py-4 px-6 text-center w-16">#</th>
-                                        <th className="py-4 px-6">Delegate Information</th>
-                                        <th className="py-4 px-6">Registration Type</th>
-                                        <th className="py-4 px-6">Payment Status</th>
-                                        <th className="py-4 px-6">Date Registered</th>
-                                        <th className="py-4 px-6 text-right">Verification Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100">
-                                    {filteredParticipants.length > 0 ? (
-                                        filteredParticipants.map((p, idx) => (
-                                            <tr key={p.id} className="hover:bg-gray-50/50 transition-colors">
-                                                <td className="py-5 px-6 text-sm font-bold text-gray-300 text-center">{idx + 1}</td>
-                                                <td className="py-5 px-6">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-10 h-10 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center font-bold text-blue-600 uppercase text-xs">
-                                                            {p.user?.username?.charAt(0)}
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-left">
+                                    <thead className="bg-slate-50 border-b border-slate-200">
+                                        <tr>
+                                            <th className="py-3 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Participant</th>
+                                            <th className="py-3 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider">Institution</th>
+                                            <th className="py-3 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Type</th>
+                                            <th className="py-3 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-center">Status</th>
+                                            <th className="py-3 px-6 text-[11px] font-bold text-slate-500 uppercase tracking-wider text-right whitespace-nowrap">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-100">
+                                        {filteredParticipants.length > 0 ? (
+                                            filteredParticipants.map((p) => (
+                                                <tr key={p.id} className="hover:bg-slate-50 transition-colors group/row">
+                                                    <td className="py-4 px-6">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-9 h-9 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-600 text-xs">
+                                                                {p.user?.username?.charAt(0).toUpperCase()}
+                                                            </div>
+                                                            <div>
+                                                                <div className="text-sm font-semibold text-slate-900">{p.user?.username}</div>
+                                                                <div className="text-xs text-slate-500">{p.user?.email}</div>
+                                                            </div>
                                                         </div>
-                                                        <div>
-                                                            <div className="font-bold text-gray-900">{p.user?.username}</div>
-                                                            <div className="text-xs text-gray-400">{p.user?.email}</div>
+                                                    </td>
+                                                    <td className="py-4 px-6 text-sm text-slate-600">
+                                                        {p.user?.institution || 'N/A'}
+                                                    </td>
+                                                    <td className="py-4 px-6 text-center">
+                                                        <span className="text-[10px] font-medium bg-slate-100 text-slate-600 py-1 px-2 rounded-md uppercase tracking-wide">
+                                                            {p.registration_type}
+                                                        </span>
+                                                    </td>
+                                                    <td className="py-4 px-6 text-center">
+                                                        <Badge variant="outline" className={cn("text-[10px] py-1 px-2 uppercase border", getPaymentBadge(p.payment_status))}>
+                                                            {p.payment_status?.replace('_', ' ')}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="py-4 px-6 text-right">
+                                                        <div className="flex items-center justify-end gap-1">
+                                                            {updatingId === p.id ? (
+                                                                <RefreshCw size={16} className="animate-spin text-slate-400" />
+                                                            ) : (
+                                                                <div className="flex items-center gap-1 opacity-40 group-hover/row:opacity-100 transition-opacity">
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        title="Pending"
+                                                                        onClick={() => handleUpdatePayment(p.id, 'pending')}
+                                                                        className={cn("h-8 w-8", p.payment_status === 'pending' ? "text-amber-600" : "text-slate-400")}
+                                                                    >
+                                                                        <Clock size={16} />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        title="Paid Onsite"
+                                                                        onClick={() => handleUpdatePayment(p.id, 'paid_onsite')}
+                                                                        className={cn("h-8 w-8", p.payment_status === 'paid_onsite' ? "text-blue-600" : "text-slate-400")}
+                                                                    >
+                                                                        <Check size={16} />
+                                                                    </Button>
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        title="Paid Online"
+                                                                        onClick={() => handleUpdatePayment(p.id, 'paid_online')}
+                                                                        className={cn("h-8 w-8", p.payment_status === 'paid_online' || p.payment_status === 'completed' ? "text-green-600" : "text-slate-400")}
+                                                                    >
+                                                                        <CreditCard size={16} />
+                                                                    </Button>
+                                                                    <div className="w-px h-4 bg-slate-200 mx-1" />
+                                                                    <Button
+                                                                        variant="ghost"
+                                                                        size="icon"
+                                                                        asChild
+                                                                        className="h-8 w-8 text-slate-400 hover:text-slate-600"
+                                                                    >
+                                                                        <a href={`mailto:${p.user?.email}`}>
+                                                                            <Mail size={16} />
+                                                                        </a>
+                                                                    </Button>
+                                                                </div>
+                                                            )}
                                                         </div>
-                                                    </div>
-                                                </td>
-                                                <td className="py-5 px-6">
-                                                    <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded text-[10px] font-black uppercase tracking-widest">
-                                                        {p.registration_type}
-                                                    </span>
-                                                </td>
-                                                <td className="py-5 px-6">
-                                                    <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider border ${getPaymentBadge(p.payment_status)}`}>
-                                                        {p.payment_status?.replace('_', ' ')}
-                                                    </span>
-                                                </td>
-                                                <td className="py-5 px-6 text-sm text-gray-500 font-medium">
-                                                    {new Date(p.registered_at).toLocaleDateString()}
-                                                </td>
-                                                <td className="py-5 px-6 text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        {updatingId === p.id ? (
-                                                            <Loader2 size={16} className="animate-spin text-blue-600" />
-                                                        ) : (
-                                                            <>
-                                                                <button
-                                                                    title="Mark as Pending"
-                                                                    onClick={() => handleUpdatePayment(p.id, 'pending')}
-                                                                    className={`p-1.5 rounded-lg border transition-all ${p.payment_status === 'pending' ? 'bg-orange-500 text-white border-orange-500' : 'text-gray-400 border-gray-100 hover:bg-orange-50 hover:text-orange-600'}`}
-                                                                >
-                                                                    <Clock size={16} />
-                                                                </button>
-                                                                <button
-                                                                    title="Mark as Paid Onsite"
-                                                                    onClick={() => handleUpdatePayment(p.id, 'paid_onsite')}
-                                                                    className={`p-1.5 rounded-lg border transition-all ${p.payment_status === 'paid_onsite' ? 'bg-blue-500 text-white border-blue-500' : 'text-gray-400 border-gray-100 hover:bg-blue-50 hover:text-blue-600'}`}
-                                                                >
-                                                                    <Check size={16} />
-                                                                </button>
-                                                                <button
-                                                                    title="Mark as Paid Online"
-                                                                    onClick={() => handleUpdatePayment(p.id, 'paid_online')}
-                                                                    className={`p-1.5 rounded-lg border transition-all ${p.payment_status === 'paid_online' || p.payment_status === 'completed' ? 'bg-green-500 text-white border-green-500' : 'text-gray-400 border-gray-100 hover:bg-green-50 hover:text-green-600'}`}
-                                                                >
-                                                                    <CreditCard size={16} />
-                                                                </button>
-                                                            </>
-                                                        )}
-                                                        <div className="w-px h-4 bg-gray-100 mx-1"></div>
-                                                        <button className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all">
-                                                            <Mail size={16} />
-                                                        </button>
-                                                    </div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="5" className="py-20 text-center">
+                                                    <p className="text-slate-500 text-sm">No participants found.</p>
                                                 </td>
                                             </tr>
-                                        ))
-                                    ) : (
-                                        <tr>
-                                            <td colSpan="6" className="py-20 text-center">
-                                                <Users size={40} className="mx-auto text-gray-100 mb-4" />
-                                                <p className="text-gray-400 font-medium">No delegates found matching your search.</p>
-                                            </td>
-                                        </tr>
-                                    )}
-                                </tbody>
-                            </table>
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
                         )}
-                    </div>
+                    </Card>
                 </div>
             )}
         </OrganizerSidebar>
